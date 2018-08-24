@@ -1,10 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {AppContainer} from 'react-hot-loader';
+import Board from './components/Board';
+import { observe } from './game';
 
 const render = () => {
-  const App = require('./components/app').default;
-  ReactDOM.render(<AppContainer><App /></AppContainer>, document.getElementById('App'));
+    const rootEl = document.getElementById('App');
+    observe(knightPosition => 
+        ReactDOM.render(
+            <AppContainer>
+                <Board knightPosition={knightPosition} />
+            </AppContainer>, 
+            rootEl
+        )
+    );
 }
 
 render();

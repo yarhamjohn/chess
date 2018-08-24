@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Square from './square';
 import Knight from './knight';
+import { moveKnight, canMoveKnight } from '../game';
 
 export default class Board extends React.Component {
     render() {
@@ -10,7 +11,7 @@ export default class Board extends React.Component {
             const squares = [];
             for (let col = 0; col < 8; col++) {
                 squares.push(
-                    this.renderSquare(row, col)
+                    this.renderSquare(col, row)
                 )
             }
             rows.push(
@@ -26,18 +27,26 @@ export default class Board extends React.Component {
         );
     }
 
-    renderSquare(x, y) {
-        const black = (x + y) % 2 === 1;
+    renderSquare(col, row) {
+        const black = (col + row) % 2 === 1;
 
         const [knightY, knightX] = this.props.knightPosition;
-        const piece = (x === knightX && y === knightY) ? <Knight /> : null;
+        const piece = (row === knightX && col === knightY) ? <Knight /> : null;
 
-        const keyId = `${x}_${y}`;
+        const keyId = `${col}_${row}`;
         return (
-            <Square key={keyId} black={black}>
-                {piece}
-            </Square>
+            <div key={keyId} onClick={() => this.handleSquareClick(col, row) }>
+                <Square black={black}>
+                    {piece}
+                </Square>
+            </div>
         )
+    }
+
+    handleSquareClick(col, row) {
+        if (canMoveKnight(col, row)) {
+            moveKnight(col, row)
+        }
     }
 }
 
