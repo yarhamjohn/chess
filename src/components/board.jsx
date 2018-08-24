@@ -1,10 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Square from './square';
+import BoardSquare from './board-square';
 import Knight from './knight';
-import { moveKnight, canMoveKnight } from '../game';
+import { moveKnight, canMoveKnight } from '../shared/game';
+import { DragDropContext } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 
-export default class Board extends React.Component {
+class Board extends React.Component {
     render() {
         const rows = [];
         for (let row = 0; row < 8; row++) {
@@ -28,25 +30,22 @@ export default class Board extends React.Component {
     }
 
     renderSquare(col, row) {
-        const black = (col + row) % 2 === 1;
-
-        const [knightY, knightX] = this.props.knightPosition;
-        const piece = (row === knightX && col === knightY) ? <Knight /> : null;
-
         const keyId = `${col}_${row}`;
         return (
-            <div key={keyId} onClick={() => this.handleSquareClick(col, row) }>
-                <Square black={black}>
-                    {piece}
-                </Square>
+            <div key={keyId} 
+                style={{ width: '25px', height: '25px' }}>
+                <BoardSquare col={col} row={row}>
+                    {this.renderPiece(col, row)}
+                </BoardSquare>
             </div>
         )
     }
 
-    handleSquareClick(col, row) {
-        if (canMoveKnight(col, row)) {
-            moveKnight(col, row)
-        }
+    renderPiece(col, row) {
+        const [knightY, knightX] = this.props.knightPosition;
+        if (row === knightX && col === knightY) {
+            return <Knight />
+        };
     }
 }
 
@@ -55,3 +54,5 @@ Board.propTypes = {
         PropTypes.number.isRequired
     ).isRequired
 }
+
+export default DragDropContext(HTML5Backend)(Board);

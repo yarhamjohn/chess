@@ -8,7 +8,7 @@ export default class Square extends React.Component {
         const iconColor = black ? 'white' : 'black';
 
         return (
-            <div style={{ backgroundColor: fillColor, color: iconColor, height: 25, width: 25 }}>
+            <div style={{ backgroundColor: fillColor, color: iconColor, width: '100%', height: '100%' }}>
                 {this.props.children}
             </div>
         );
