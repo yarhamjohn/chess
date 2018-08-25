@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ItemTypes } from '../shared/constants';
 import { DragSource } from 'react-dnd';
 
-const knightSource = {
+const pieceSource = {
     beginDrag(props) {
         return {};
     }
@@ -16,7 +15,11 @@ function collect(connect, monitor) {
     }
 }
 
-class Knight extends React.Component {
+function getPieceType(props) {
+    return props.type;
+}
+
+class Piece extends React.Component {
     render() {
         const { connectDragSource, isDragging } = this.props;
         return connectDragSource(
@@ -25,14 +28,17 @@ class Knight extends React.Component {
                 cursor: 'move', 
                 fontSize: 20, 
                 fontWeight: 'bold'
-            }}>♘</span>
+            }}>
+                {this.props.children}
+            </span>
         );
     }
 }
 
-Knight.propTypes = {
+Piece.propTypes = {
     connectDragSource: PropTypes.func.isRequired,
-    isDragging: PropTypes.bool.isRequired
+    isDragging: PropTypes.bool.isRequired,
+    type: PropTypes.string.isRequired
 }
 
-export default DragSource(ItemTypes.KNIGHT, knightSource, collect)(Knight);
+export default DragSource(getPieceType, pieceSource, collect)(Piece);

@@ -1,10 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import BoardSquare from './board-square';
-import Knight from './knight';
+import Piece from './piece';
 import { moveKnight, canMoveKnight } from '../shared/game';
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
+import { ItemTypes, Pieces } from '../shared/constants';
 
 class Board extends React.Component {
     render() {
@@ -34,7 +35,7 @@ class Board extends React.Component {
         return (
             <div key={keyId} 
                 style={{ width: '25px', height: '25px' }}>
-                <BoardSquare col={col} row={row}>
+                <BoardSquare col={col} row={row} type={ItemTypes.KNIGHT}>
                     {this.renderPiece(col, row)}
                 </BoardSquare>
             </div>
@@ -44,7 +45,7 @@ class Board extends React.Component {
     renderPiece(col, row) {
         const [knightY, knightX] = this.props.knightPosition;
         if (row === knightX && col === knightY) {
-            return <Knight />
+            return <Piece type={ItemTypes.KNIGHT}>{Pieces.KNIGHT}</Piece>
         };
     }
 }

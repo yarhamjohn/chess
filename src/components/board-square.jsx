@@ -3,15 +3,15 @@ import PropTypes from 'prop-types';
 import Square from './square';
 import { DropTarget } from 'react-dnd';
 import { ItemTypes } from '../shared/constants';
-import { canMoveKnight, moveKnight } from '../shared/game';
+import { canMovePiece, movePiece } from '../shared/game';
 
 const squareTarget = {
     drop(props, monitor) {
-        moveKnight(props.col, props.row)
+        movePiece(props.col, props.row, props.type)
     },
 
     canDrop(props) {
-        return canMoveKnight(props.col, props.row)
+        return canMovePiece(props.col, props.row, props.type)
     }
 }
 
@@ -21,6 +21,10 @@ function collect(connect, monitor) {
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop()
     }
+}
+
+function getPieceType(props) {
+    return props.type == null ? "" : props.type;
 }
 
 class BoardSquare extends React.Component {
@@ -61,7 +65,8 @@ Square.propTypes = {
     col: PropTypes.number,
     connectDropTarget: PropTypes.func.isRequired,
     isOver: PropTypes.bool.isRequired,
-    canDrop: PropTypes.bool.isRequired
+    canDrop: PropTypes.bool.isRequired,
+    type: PropTypes.string
 };
 
-export default DropTarget(ItemTypes.KNIGHT, squareTarget, collect)(BoardSquare);
+export default DropTarget(getPieceType, squareTarget, collect)(BoardSquare);

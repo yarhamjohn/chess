@@ -13,12 +13,12 @@ export function observe(o) {
     emitChange();
 }
 
-export function moveKnight(toCol, toRow) {
+export function movePiece(toCol, toRow, type) {
     knightPosition = [toCol, toRow];
     emitChange();
 }
 
-export function canMoveKnight(toCol, toRow) {
+export function canMovePiece(toCol, toRow, type) {
     const [col, row] = knightPosition;
     const rowChange = toRow - row;
     const colChange = toCol - col;
