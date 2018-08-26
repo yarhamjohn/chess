@@ -6,10 +6,10 @@ import { observe } from './shared/game';
 
 const render = () => {
     const rootEl = document.getElementById('App');
-    observe(knightPosition => 
+    observe(pieces => 
         ReactDOM.render(
             <AppContainer>
-                <Board knightPosition={knightPosition} />
+                <Board pieces={pieces} />
             </AppContainer>, 
             rootEl
         )

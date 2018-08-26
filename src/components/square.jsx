@@ -3,12 +3,10 @@ import PropTypes from 'prop-types';
 
 export default class Square extends React.Component {
     render() {
-        const { black } = this.props;
-        const fillColor = black ? 'black' : 'white';
-        const iconColor = black ? 'white' : 'black';
+        const { colour } = this.props;
 
         return (
-            <div style={{ backgroundColor: fillColor, color: iconColor, width: '100%', height: '100%' }}>
+            <div style={{ backgroundColor: colour, width: '100%', height: '100%' }}>
                 {this.props.children}
             </div>
         );
@@ -16,5 +14,5 @@ export default class Square extends React.Component {
 }
 
 Square.propTypes = {
-    black: PropTypes.bool
+    colour: PropTypes.string.isRequired
 };

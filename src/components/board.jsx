@@ -2,10 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import BoardSquare from './board-square';
 import Piece from './piece';
-import { moveKnight, canMoveKnight } from '../shared/game';
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
-import { ItemTypes, Pieces } from '../shared/constants';
+import { Pieces } from '../shared/constants';
 
 class Board extends React.Component {
     render() {
@@ -13,9 +12,13 @@ class Board extends React.Component {
         for (let row = 0; row < 8; row++) {
             const squares = [];
             for (let col = 0; col < 8; col++) {
-                squares.push(
-                    this.renderSquare(col, row)
-                )
+                const pieceData = this.getPieceData(col, row);
+                
+                if (pieceData === null) {
+                    squares.push(this.renderSquare(col, row, null, null));
+                } else {
+                    squares.push(this.renderSquare(col, row, pieceData.piece, pieceData.id));
+                }
             }
             rows.push(
                 <div key={row} style={{display: 'flex'}}>
@@ -30,29 +33,44 @@ class Board extends React.Component {
         );
     }
 
-    renderSquare(col, row) {
+    renderSquare(col, row, piece, id) {
         const keyId = `${col}_${row}`;
         return (
             <div key={keyId} 
                 style={{ width: '25px', height: '25px' }}>
-                <BoardSquare col={col} row={row} type={ItemTypes.KNIGHT}>
-                    {this.renderPiece(col, row)}
-                </BoardSquare>
+                <BoardSquare col={col} row={row} piece={piece} id={id}/>
             </div>
         )
     }
 
-    renderPiece(col, row) {
-        const [knightY, knightX] = this.props.knightPosition;
-        if (row === knightX && col === knightY) {
-            return <Piece type={ItemTypes.KNIGHT}>{Pieces.KNIGHT}</Piece>
-        };
+    getPieceData(col, row) {
+        const { pieces } = this.props;
+        for (let i = 0; i < pieces.length; i++) {
+            if (pieces[i].position[0] === col && pieces[i].position[1] === row) {
+                return pieces[i];
+            }
+        }
+        
+        return null;
     }
 }
 
 Board.propTypes = {
-    knightPosition: PropTypes.arrayOf(
-        PropTypes.number.isRequired
+    pieces: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            piece: PropTypes.shape({
+                type: PropTypes.string.isRequired,
+                icon: PropTypes.string.isRequired,
+                colour: PropTypes.string.isRequired,
+                startingPositions: PropTypes.arrayOf(
+                    PropTypes.arrayOf(
+                        PropTypes.number
+                    )
+                )
+            }).isRequired,
+            position: PropTypes.arrayOf(PropTypes.number.isRequired).isRequired
+        }).isRequired
     ).isRequired
 }
 

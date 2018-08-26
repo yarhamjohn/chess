@@ -2,16 +2,21 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Square from './square';
 import { DropTarget } from 'react-dnd';
-import { ItemTypes } from '../shared/constants';
 import { canMovePiece, movePiece } from '../shared/game';
+import Piece from './Piece';
+import { PieceTypes } from '../shared/constants';
 
 const squareTarget = {
     drop(props, monitor) {
-        movePiece(props.col, props.row, props.type)
+        const piece = monitor.getItem();
+        const newPosition = [props.col, props.row];
+        movePiece(newPosition, piece.id);
     },
 
-    canDrop(props) {
-        return canMovePiece(props.col, props.row, props.type)
+    canDrop(props, monitor) {
+        const piece = monitor.getItem();
+        const newPosition = [props.col, props.row];
+        return canMovePiece(newPosition, piece.id);
     }
 }
 
@@ -23,25 +28,25 @@ function collect(connect, monitor) {
     }
 }
 
-function getPieceType(props) {
-    return props.type == null ? "" : props.type;
-}
-
 class BoardSquare extends React.Component {
     render() {
-        const { row, col, connectDropTarget, isOver, canDrop } = this.props;
-        const black = (col + row) % 2 === 1;
-
+        const { connectDropTarget, isOver, canDrop, piece, id } = this.props;
         return connectDropTarget(
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                <Square black={black}>
-                    {this.props.children}
+                <Square colour={this.getSquareColour()}>
+                    {piece !== null && <Piece piece={piece} id={id} />}
                 </Square>
                 {isOver && !canDrop && this.renderOverlay('red')}
                 {!isOver && canDrop && this.renderOverlay('yellow')}
                 {isOver && canDrop && this.renderOverlay('limegreen')}
             </div>
         );
+    }
+
+    getSquareColour() {
+        const { col, row } = this.props;
+        const isEven = (col + row) % 2 === 1;
+        return isEven ? 'white' : 'lightgrey';
     }
 
     renderOverlay(color) {
@@ -66,7 +71,17 @@ Square.propTypes = {
     connectDropTarget: PropTypes.func.isRequired,
     isOver: PropTypes.bool.isRequired,
     canDrop: PropTypes.bool.isRequired,
-    type: PropTypes.string
+    id: PropTypes.string,
+    piece: PropTypes.shape({
+        type: PropTypes.string.isRequired,
+        icon: PropTypes.string.isRequired,
+        colour: PropTypes.string.isRequired,
+        startingPositions: PropTypes.arrayOf(
+            PropTypes.arrayOf(
+                PropTypes.number
+            )
+        )
+    })
 };
 
-export default DropTarget(getPieceType, squareTarget, collect)(BoardSquare);
+export default DropTarget(PieceTypes, squareTarget, collect)(BoardSquare);

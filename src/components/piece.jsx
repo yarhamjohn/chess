@@ -4,7 +4,7 @@ import { DragSource } from 'react-dnd';
 
 const pieceSource = {
     beginDrag(props) {
-        return {};
+        return {id: props.id};
     }
 };
 
@@ -15,13 +15,13 @@ function collect(connect, monitor) {
     }
 }
 
-function getPieceType(props) {
-    return props.type;
+function getDragSourceType(props) {
+    return props.piece.type;
 }
 
 class Piece extends React.Component {
     render() {
-        const { connectDragSource, isDragging } = this.props;
+        const { connectDragSource, isDragging, piece } = this.props;
         return connectDragSource(
             <span style={{
                 opacity: isDragging ? 0.5 : 1, 
@@ -29,7 +29,7 @@ class Piece extends React.Component {
                 fontSize: 20, 
                 fontWeight: 'bold'
             }}>
-                {this.props.children}
+                {piece.icon}
             </span>
         );
     }
@@ -38,7 +38,17 @@ class Piece extends React.Component {
 Piece.propTypes = {
     connectDragSource: PropTypes.func.isRequired,
     isDragging: PropTypes.bool.isRequired,
-    type: PropTypes.string.isRequired
+    id: PropTypes.string.isRequired,
+    piece: PropTypes.shape({
+        type: PropTypes.string.isRequired,
+        icon: PropTypes.string.isRequired,
+        colour: PropTypes.string.isRequired,
+        startingPositions: PropTypes.arrayOf(
+            PropTypes.arrayOf(
+                PropTypes.number
+            )
+        )
+    }).isRequired
 }
 
-export default DragSource(getPieceType, pieceSource, collect)(Piece);
+export default DragSource(getDragSourceType, pieceSource, collect)(Piece);
