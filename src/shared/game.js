@@ -33,8 +33,17 @@ function emitChange() {
 }
 
 export function movePiece(newPosition, pieceId) {
+    let pieceIdToRemove = null;
     for (var key in playingPieces) {
         if (playingPieces[key].id === pieceId) {
+            if (targetContainsOpponent(newPosition, playingPieces[key].piece.colour)) {
+                for (var key3 in playingPieces) {
+                    if (playingPieces[key3].position[0] === newPosition[0] && playingPieces[key3].position[1] === newPosition[1]) {
+                        pieceIdToRemove = playingPieces[key3].id;
+                    }
+                } 
+            }
+
             const originalPosition = playingPieces[key].position;
             playingPieces[key].position = newPosition;
             playingPieces[key].hasMoved = true;
@@ -52,12 +61,16 @@ export function movePiece(newPosition, pieceId) {
                 }
             }
 
-            //TODO:
-            //If occupied by an opposition piece then remove it
+            // Handle pawn reaching end of board
 
             break;
         };
     };
+
+    if (pieceIdToRemove !== null) {
+        playingPieces = playingPieces.filter(playingPiece => playingPiece.id !== pieceIdToRemove);
+    }
+    console.log(playingPieces);
     emitChange();
 }
 
