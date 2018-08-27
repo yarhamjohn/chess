@@ -75,7 +75,7 @@ function isValidMove(newPosition, playingPiece) {
         case 'queen':
             return validQueenMove(rowChange, colChange, playingPiece);
         case 'rook':
-            return validRookMove(rowChange, colChange);
+            return validRookMove(rowChange, colChange, playingPiece);
         case 'bishop':
             return validBishopMove(rowChange, colChange, playingPiece);
         case 'knight':
@@ -115,9 +115,15 @@ function validQueenMove(rowChange, colChange, playingPiece) {
     return false;
 }
 
-function validRookMove(rowChange, colChange) {
-    //valid in straight lines but not beyond other pieces except for castling...!
-    return false;
+function validRookMove(rowChange, colChange, playingPiece) {
+    if (rowChange !== 0 && colChange !== 0) {
+        return false;
+    }
+
+    const colour = playingPiece.piece.colour;
+    const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
+
+    return noStraightObstruction(target, playingPiece.position, rowChange, colChange, colour);
 }
 
 function validBishopMove(rowChange, colChange, playingPiece) {
