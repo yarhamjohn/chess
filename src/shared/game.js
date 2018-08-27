@@ -73,7 +73,7 @@ function isValidMove(newPosition, playingPiece) {
         case 'king': 
             return validKingMove(rowChange, colChange);
         case 'queen':
-            return validQueenMove(rowChange, colChange);
+            return validQueenMove(rowChange, colChange, playingPiece);
         case 'rook':
             return validRookMove(rowChange, colChange);
         case 'bishop':
@@ -85,16 +85,6 @@ function isValidMove(newPosition, playingPiece) {
     };
 }
 
-function teamOccupiesTarget(toCol, toRow, pieceColour) {
-    for (var key in playingPieces) {
-        const playingPiece = playingPieces[key];
-        const positionMatches = playingPiece.position[0] === toCol && playingPiece.position[1] === toRow;
-        if (positionMatches) {
-            const colourMatches = playingPiece.piece.colour === pieceColour;
-            return colourMatches;
-        } 
-    }
-}
 
 function validKingMove(rowChange, colChange) {
     const absRowChange = Math.abs(rowChange);
@@ -108,8 +98,20 @@ function validKingMove(rowChange, colChange) {
 }
 
 
-function validQueenMove(rowChange, colChange) {
-    // Anything is valid except going beyond another piece
+function validQueenMove(rowChange, colChange, playingPiece) {
+    const colour = playingPiece.piece.colour;
+    const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
+
+    const isDiagonal = Math.abs(rowChange) === Math.abs(colChange);
+    if (isDiagonal) {
+        return noDiagonalObstruction(target, playingPiece.position, rowChange, colChange, colour);
+    }
+
+    const isStraight = rowChange === 0 || colChange === 0;
+    if (isStraight) {
+        return noStraightObstruction(target, playingPiece.position, rowChange, colChange, colour);
+    }
+
     return false;
 }
 
@@ -126,60 +128,7 @@ function validBishopMove(rowChange, colChange, playingPiece) {
     const colour = playingPiece.piece.colour;
     const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
 
-    return bishopIsNotObstructed(target, playingPiece.position, rowChange, colChange, playingPiece.piece.colour);
-}
-
-function bishopIsNotObstructed(target, start, rowChange, colChange, colour) {
-    const [targetCol, targetRow] = target;
-    const [startCol, startRow] = start;
-    const rowMoveDirection = rowChange / Math.abs(rowChange);
-    const colMoveDirection = colChange / Math.abs(colChange);
-
-    const leftDiagonalUp = rowChange < 0 && colChange < 0;
-    if (leftDiagonalUp) {
-        for (let row = startRow + rowMoveDirection; row > targetRow; row += rowMoveDirection) {
-            for (let col = startCol + colMoveDirection; col > targetCol; col += colMoveDirection) {
-                if (targetIsOccupied([col, row])) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    const leftDiagonalDown = rowChange > 0 && colChange < 0;
-    if (leftDiagonalDown) {
-        for (let row = startRow + rowMoveDirection; row < targetRow; row += rowMoveDirection) {
-            for (let col = startCol + colMoveDirection; col > targetCol; col += colMoveDirection) {
-                if (targetIsOccupied([col, row])) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    const rightDiagonalUp = rowChange < 0 && colChange > 0;
-    if (rightDiagonalUp) {
-        for (let row = startRow + rowMoveDirection; row > targetRow; row += rowMoveDirection) {
-            for (let col = startCol + colMoveDirection; col < targetCol; col += colMoveDirection) {
-                if (targetIsOccupied([col, row])) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    const rightDiagonalDown = rowChange > 0 && colChange > 0;
-    if (rightDiagonalDown) {
-        for (let row = startRow + rowMoveDirection; row < targetRow; row += rowMoveDirection) {
-            for (let col = startCol + colMoveDirection; col < targetCol; col += colMoveDirection) {
-                if (targetIsOccupied([col, row])) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    return targetContainsOpponent(target, colour) || !targetIsOccupied(target);
+    return noDiagonalObstruction(target, playingPiece.position, rowChange, colChange, playingPiece.piece.colour);
 }
 
 function validKnightMove(rowChange, colChange) {
@@ -229,6 +178,60 @@ function pawnIsNotObstructed(currentPosition, moveDirection) {
     return true;
 }
 
+function noStraightObstruction(target, start, rowChange, colChange, colour) {
+    const [startCol, startRow] = start;
+
+    let moveNum = 1;
+    if (colChange === 0) {
+        const distance = Math.abs(rowChange);
+        const rowDirection = rowChange / distance;
+
+        let rowNum = rowDirection;
+        while (moveNum < distance) {
+            if (targetIsOccupied([startCol, startRow + rowNum])) {
+                return false;
+            }
+            rowNum += rowDirection;
+            moveNum++;
+        }
+    } else {
+        const distance = Math.abs(colChange);
+        const colDirection = colChange / distance;
+        
+        let colNum = colDirection;
+        while (moveNum < distance) {
+            if (targetIsOccupied([startCol + colNum, startRow])) {
+                return false;
+            }
+            colNum += colDirection;
+            moveNum++;
+        }
+    }
+
+    return targetContainsOpponent(target, colour) || !targetIsOccupied(target);
+}
+
+function noDiagonalObstruction(target, start, rowChange, colChange, colour) {
+    const [startCol, startRow] = start;
+    const rowMoveDirection = rowChange / Math.abs(rowChange);
+    const colMoveDirection = colChange / Math.abs(colChange);
+    const diagonalDistance = Math.abs(colChange);
+
+    let moveNum = 1;
+    let colNum = colMoveDirection;
+    let rowNum = rowMoveDirection;
+    while (moveNum < diagonalDistance) {
+        if (targetIsOccupied([startCol + colNum, startRow + rowNum])) {
+            return false;
+        }
+        rowNum += rowMoveDirection;
+        colNum += colMoveDirection;
+        moveNum++;
+    }
+
+    return targetContainsOpponent(target, colour) || !targetIsOccupied(target);
+}
+
 function targetContainsOpponent(targetPosition, colour) {
     for (let key in playingPieces) {
         const playingPiece = playingPieces[key];
@@ -257,4 +260,15 @@ function targetIsOccupied(targetPosition) {
     }
 
     return false;
+}
+
+function teamOccupiesTarget(toCol, toRow, pieceColour) {
+    for (var key in playingPieces) {
+        const playingPiece = playingPieces[key];
+        const positionMatches = playingPiece.position[0] === toCol && playingPiece.position[1] === toRow;
+        if (positionMatches) {
+            const colourMatches = playingPiece.piece.colour === pieceColour;
+            return colourMatches;
+        } 
+    }
 }
