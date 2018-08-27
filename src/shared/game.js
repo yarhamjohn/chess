@@ -1,6 +1,7 @@
 import { Pieces } from './constants';
 
 let playingPieces = [];
+let removedPieces = [];
 let observer = null;
 
 export function observe(o) {
@@ -33,13 +34,14 @@ function emitChange() {
 }
 
 export function movePiece(newPosition, pieceId) {
-    let pieceIdToRemove = null;
+    let pieceIdToRemove = [];
+    let pieceToAdd = [];
     for (var key in playingPieces) {
         if (playingPieces[key].id === pieceId) {
             if (targetContainsOpponent(newPosition, playingPieces[key].piece.colour)) {
                 for (var key3 in playingPieces) {
                     if (playingPieces[key3].position[0] === newPosition[0] && playingPieces[key3].position[1] === newPosition[1]) {
-                        pieceIdToRemove = playingPieces[key3].id;
+                        pieceIdToRemove.push(playingPieces[key3].id);
                     }
                 } 
             }
@@ -61,16 +63,67 @@ export function movePiece(newPosition, pieceId) {
                 }
             }
 
-            // Handle pawn reaching end of board
+            if (playingPieces[key].piece.type === 'pawn' && (newPosition[1] === 0 || newPosition[1] === 7)) {
+                const availablePieces = removedPieces.filter(playingPiece => playingPiece.piece.colour === playingPieces[key].piece.colour);
+                if (availablePieces.length === 0) {
+                    pieceIdToRemove.push(playingPieces[key].id);
+                    break;
+                }
+                                
+                let highestRankPiece = null;
+                for (let i = 0; i < availablePieces.length; i++) {
+                    if (highestRankPiece === null && availablePieces[i] !== 'pawn') {
+                        highestRankPiece = availablePieces[i];
+                    }
+
+                    if (availablePieces[i].piece.type === 'queen') {
+                        highestRankPiece = availablePieces[i];
+                        break;
+                    }
+
+                    if (availablePieces[i].piece.type === 'rook' && highestRankPiece.piece.type !== 'queen') {
+                        highestRankPiece = availablePieces[i];
+                    }
+
+                    if (availablePieces[i].piece.type === 'bishop' && highestRankPiece.piece.type !== 'queen' && highestRankPiece.piece.type !== 'rook') {
+                        highestRankPiece = availablePieces[i];
+                    }
+
+                    if (availablePieces[i].piece.type === 'knight' && highestRankPiece.piece.type !== 'queen' && highestRankPiece.piece.type !== 'rook' && highestRankPiece.piece.type !== 'bishop') {
+                        highestRankPiece = availablePieces[i];
+                    }
+                }
+
+                if (highestRankPiece !== null) {
+                    highestRankPiece.position = [newPosition[0], newPosition[1]];
+                    pieceToAdd.push(highestRankPiece);
+                }
+
+                for (var key4 in playingPieces) {
+                    if (playingPieces[key4].id === playingPieces[key].id) {
+                        pieceIdToRemove.push(...playingPieces.map(pp => pp.id).filter(id => id === playingPieces[key4].id))
+                    }
+                }
+            }
 
             break;
         };
     };
 
-    if (pieceIdToRemove !== null) {
-        playingPieces = playingPieces.filter(playingPiece => playingPiece.id !== pieceIdToRemove);
+    if (pieceIdToRemove.length > 0) {
+        for (let i = 0; i < pieceIdToRemove.length; i++) {
+            removedPieces.push(...playingPieces.filter(playingPiece => playingPiece.id === pieceIdToRemove[i]));
+            playingPieces = playingPieces.filter(playingPiece => playingPiece.id !== pieceIdToRemove[i]);
+        }
     }
-    console.log(playingPieces);
+
+    if (pieceToAdd.length > 0) {
+        for (let i = 0; i < pieceToAdd.length; i++) {
+            removedPieces = removedPieces.filter(playingPiece => playingPiece.id !== pieceToAdd[i].id);
+            playingPieces.push(pieceToAdd[i]);
+        }
+    }
+
     emitChange();
 }
 
