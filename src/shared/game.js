@@ -20,7 +20,8 @@ function populatePlayingPieces() {
                 {
                     id: `${key}_${i}`,  
                     piece: Pieces[key],
-                    position: Pieces[key].startingPositions[i]
+                    position: Pieces[key].startingPositions[i],
+                    hasMoved: false
                 }
             )
         }
@@ -34,7 +35,22 @@ function emitChange() {
 export function movePiece(newPosition, pieceId) {
     for (var key in playingPieces) {
         if (playingPieces[key].id === pieceId) {
+            const originalPosition = playingPieces[key].position;
             playingPieces[key].position = newPosition;
+            playingPieces[key].hasMoved = true;
+
+            if (playingPieces[key].piece.type === 'king' && Math.abs(originalPosition[0] - newPosition[0]) === 2) {
+                const direction = originalPosition[0] - newPosition[0] > 0 ? 0 : 7;
+                const rookToCastle = playingPieces.filter(playingPiece => playingPiece.position[0] === direction && playingPiece.position[1] === newPosition[1])[0];
+
+                for (var key2 in playingPieces) {
+                    if (playingPieces[key2].id === rookToCastle.id) {
+                        const rookDirection = originalPosition[0] - newPosition[0] > 0 ? 1 : -1 ;
+                        playingPieces[key2].position = [newPosition[0] + rookDirection, playingPieces[key2].position[1]];
+                        playingPieces[key2].hasMoved = true;
+                    }
+                }
+            }
 
             //TODO:
             //If occupied by an opposition piece then remove it
@@ -50,6 +66,8 @@ export function canMovePiece(newPosition, pieceId) {
         const playingPiece = playingPieces[key];
         if (playingPiece.id === pieceId) {
             return isValidMove(newPosition, playingPiece);
+
+            // Would be nice to show preview of the castle moving when dragging the king to a castling position but not sure it can be done...
         };
     };
 }
@@ -71,7 +89,7 @@ function isValidMove(newPosition, playingPiece) {
 
     switch (playingPiece.piece.type) {
         case 'king': 
-            return validKingMove(rowChange, colChange);
+            return validKingMove(rowChange, colChange, playingPiece);
         case 'queen':
             return validQueenMove(rowChange, colChange, playingPiece);
         case 'rook':
@@ -86,9 +104,14 @@ function isValidMove(newPosition, playingPiece) {
 }
 
 
-function validKingMove(rowChange, colChange) {
+function validKingMove(rowChange, colChange, playingPiece) {
     const absRowChange = Math.abs(rowChange);
     const absColChange = Math.abs(colChange);
+
+    const castlingMove = absRowChange === 0 && absColChange === 2;
+    if (castlingMove) {
+        return isValidCastle(rowChange, colChange, playingPiece);
+    }
 
     return (
         (absRowChange === 1 && absColChange === 1)
@@ -97,6 +120,35 @@ function validKingMove(rowChange, colChange) {
     );
 }
 
+function isValidCastle(rowChange, colChange, playingPiece) {
+    if (playingPiece.hasMoved || castleHasMoved(colChange, playingPiece.position[1])) {
+        return false;
+    }
+
+    const targetCol = colChange > 0 ? 7 : 0;
+    const target = [colChange, playingPiece.position[1]];
+    if (!noStraightObstruction(target, playingPiece.position, rowChange, targetCol - playingPiece.position[0], playingPiece.piece.colour)) {
+        return false;
+    }
+
+    return true;
+}
+
+function castleHasMoved(colChange, row) {
+    let cornerPiece = null;
+
+    if (colChange < 0) {
+        cornerPiece = playingPieces.filter(playingPiece => playingPiece.position[0] === 0 && playingPiece.position[1] === row);
+    } else {
+        cornerPiece = playingPieces.filter(playingPiece => playingPiece.position[0] === 7 && playingPiece.position[1] === row);
+    }
+    
+    if (cornerPiece.length === 1) {
+        return (cornerPiece[0].piece.type !== 'rook' || cornerPiece[0].hasMoved)
+    }
+
+    return true;
+}
 
 function validQueenMove(rowChange, colChange, playingPiece) {
     const colour = playingPiece.piece.colour;
