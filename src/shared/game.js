@@ -4,41 +4,51 @@ let playingPieces = [];
 let removedPieces = [];
 let observer = null;
 
-export function observe(o) {
-    if (observer) {
-        throw new Error('Multiple observers not implemented');
-    }
-    observer = o;
-    populatePlayingPieces();
-    emitChange();
-}
-
-function populatePlayingPieces() {
-    for (var key in Pieces) {
-        const numPieces = Pieces[key].startingPositions.length;
-        for (let i = 0; i < numPieces; i++) {
-            playingPieces.push(
-                {
-                    id: `${key}_${i}`,  
-                    piece: Pieces[key],
-                    position: Pieces[key].startingPositions[i],
-                    hasMoved: false
-                }
-            )
-        }
-    }
+function reset() {
+    observer = null;
+    playingPieces = [];
+    removedPieces = [];
 }
 
 function emitChange() {
     observer(playingPieces);
 }
 
-export function movePiece(newPosition, pieceId) {
+function populatePlayingPieces() {
+    Object.keys(Pieces).forEach((key) => {
+        const piece = Pieces[key];
+        const numPieces = piece.startingPositions.length;
+        for (let i = 0; i < numPieces; i += 1) {
+            playingPieces.push(
+                {
+                    id: `${key}_${i}`,
+                    type: piece.type,
+                    icon: piece.icon,
+                    colour: piece.colour,
+                    startingPositions: piece.startingPositions,
+                    position: piece.startingPositions[i],
+                    hasMoved: false
+                }
+            );
+        }
+    });
+}
+
+function observe(o) {
+    if (observer) {
+        reset();
+    }
+    observer = o;
+    populatePlayingPieces();
+    emitChange();
+}
+
+function movePiece(newPosition, pieceId) {
     let pieceIdToRemove = [];
     let pieceToAdd = [];
     for (var key in playingPieces) {
         if (playingPieces[key].id === pieceId) {
-            if (targetContainsOpponent(newPosition, playingPieces[key].piece.colour)) {
+            if (targetContainsOpponent(newPosition, playingPieces[key].colour)) {
                 for (var key3 in playingPieces) {
                     if (playingPieces[key3].position[0] === newPosition[0] && playingPieces[key3].position[1] === newPosition[1]) {
                         pieceIdToRemove.push(playingPieces[key3].id);
@@ -50,7 +60,7 @@ export function movePiece(newPosition, pieceId) {
             playingPieces[key].position = newPosition;
             playingPieces[key].hasMoved = true;
 
-            if (playingPieces[key].piece.type === 'king' && Math.abs(originalPosition[0] - newPosition[0]) === 2) {
+            if (playingPieces[key].type === 'king' && Math.abs(originalPosition[0] - newPosition[0]) === 2) {
                 const direction = originalPosition[0] - newPosition[0] > 0 ? 0 : 7;
                 const rookToCastle = playingPieces.filter(playingPiece => playingPiece.position[0] === direction && playingPiece.position[1] === newPosition[1])[0];
 
@@ -63,8 +73,8 @@ export function movePiece(newPosition, pieceId) {
                 }
             }
 
-            if (playingPieces[key].piece.type === 'pawn' && (newPosition[1] === 0 || newPosition[1] === 7)) {
-                const availablePieces = removedPieces.filter(playingPiece => playingPiece.piece.colour === playingPieces[key].piece.colour);
+            if (playingPieces[key].type === 'pawn' && (newPosition[1] === 0 || newPosition[1] === 7)) {
+                const availablePieces = removedPieces.filter(playingPiece => playingPiece.colour === playingPieces[key].colour);
                 if (availablePieces.length === 0) {
                     pieceIdToRemove.push(playingPieces[key].id);
                     break;
@@ -76,20 +86,20 @@ export function movePiece(newPosition, pieceId) {
                         highestRankPiece = availablePieces[i];
                     }
 
-                    if (availablePieces[i].piece.type === 'queen') {
+                    if (availablePieces[i].type === 'queen') {
                         highestRankPiece = availablePieces[i];
                         break;
                     }
 
-                    if (availablePieces[i].piece.type === 'rook' && highestRankPiece.piece.type !== 'queen') {
+                    if (availablePieces[i].type === 'rook' && highestRankPiece.pce.type !== 'queen') {
                         highestRankPiece = availablePieces[i];
                     }
 
-                    if (availablePieces[i].piece.type === 'bishop' && highestRankPiece.piece.type !== 'queen' && highestRankPiece.piece.type !== 'rook') {
+                    if (availablePieces[i].type === 'bishop' && highestRankPiece.type !== 'queen' && highestRankPiece.type !== 'rook') {
                         highestRankPiece = availablePieces[i];
                     }
 
-                    if (availablePieces[i].piece.type === 'knight' && highestRankPiece.piece.type !== 'queen' && highestRankPiece.piece.type !== 'rook' && highestRankPiece.piece.type !== 'bishop') {
+                    if (availablePieces[i].type === 'knight' && highestRankPiece.type !== 'queen' && highestRankPiece.type !== 'rook' && highestRankPiece.type !== 'bishop') {
                         highestRankPiece = availablePieces[i];
                     }
                 }
@@ -127,48 +137,61 @@ export function movePiece(newPosition, pieceId) {
     emitChange();
 }
 
-export function canMovePiece(newPosition, pieceId) {
-    for (var key in playingPieces) {
-        const playingPiece = playingPieces[key];
-        if (playingPiece.id === pieceId) {
-            return isValidMove(newPosition, playingPiece);
-
-            // Would be nice to show preview of the castle moving when dragging the king to a castling position but not sure it can be done...
-        };
-    };
+function getPiece(pieceId) {
+    return playingPieces.find(piece => piece.id === pieceId);
 }
 
-function isValidMove(newPosition, playingPiece) {
-    const [fromCol, fromRow] = playingPiece.position;   
-    const [toCol, toRow] = newPosition;  
+function targetIsOccupied(targetPosition, pieceColour = null) {
+    const targetPiece = playingPieces.find((piece) => {
+        const [fromCol, fromRow] = piece.position;
+        const [targetCol, targetRow] = targetPosition;
+
+        return fromCol === targetCol && fromRow === targetRow;
+    });
+
+    if (targetPiece && pieceColour) {
+        return targetPiece.colour === pieceColour;
+    }
+
+    return targetPiece;
+}
+
+function isValidMove(newPosition, piece) {
+    const [fromCol, fromRow] = piece.position;
+    const [toCol, toRow] = newPosition;
     const rowChange = toRow - fromRow;
-    const colChange = toCol - fromCol; 
+    const colChange = toCol - fromCol;
 
-    const pieceNotMoved = rowChange === 0 && colChange === 0;
-    if (pieceNotMoved) {
+    const pieceUnmoved = rowChange === 0 && colChange === 0;
+    const targetOccupiedByTeam = targetIsOccupied(newPosition, piece.colour);
+    if (pieceUnmoved || targetOccupiedByTeam) {
         return false;
     }
 
-    if (teamOccupiesTarget(toCol, toRow, playingPiece.piece.colour)) {
-        return false;
-    }
-
-    switch (playingPiece.piece.type) {
-        case 'king': 
-            return validKingMove(rowChange, colChange, playingPiece);
+    switch (piece.type) {
+        case 'king':
+            return validKingMove(rowChange, colChange, piece);
         case 'queen':
-            return validQueenMove(rowChange, colChange, playingPiece);
+            return validQueenMove(rowChange, colChange, piece);
         case 'rook':
-            return validRookMove(rowChange, colChange, playingPiece);
+            return validRookMove(rowChange, colChange, piece);
         case 'bishop':
-            return validBishopMove(rowChange, colChange, playingPiece);
+            return validBishopMove(rowChange, colChange, piece);
         case 'knight':
             return validKnightMove(rowChange, colChange);
         default:
-            return validPawnMove(rowChange, colChange, playingPiece);
-    };
+            return validPawnMove(rowChange, colChange, piece);
+    }
 }
 
+function canMovePiece(newPosition, pieceId) {
+    const piece = getPiece(pieceId);
+    if (piece) {
+        return isValidMove(newPosition, piece);
+    }
+
+    return false;
+}
 
 function validKingMove(rowChange, colChange, playingPiece) {
     const absRowChange = Math.abs(rowChange);
@@ -193,7 +216,7 @@ function isValidCastle(rowChange, colChange, playingPiece) {
 
     const targetCol = colChange > 0 ? 7 : 0;
     const target = [colChange, playingPiece.position[1]];
-    if (!noStraightObstruction(target, playingPiece.position, rowChange, targetCol - playingPiece.position[0], playingPiece.piece.colour)) {
+    if (!noStraightObstruction(target, playingPiece.position, rowChange, targetCol - playingPiece.position[0], playingPiece.colour)) {
         return false;
     }
 
@@ -210,14 +233,14 @@ function castleHasMoved(colChange, row) {
     }
     
     if (cornerPiece.length === 1) {
-        return (cornerPiece[0].piece.type !== 'rook' || cornerPiece[0].hasMoved)
+        return (cornerPiece[0].type !== 'rook' || cornerPiece[0].hasMoved)
     }
 
     return true;
 }
 
 function validQueenMove(rowChange, colChange, playingPiece) {
-    const colour = playingPiece.piece.colour;
+    const colour = playingPiece.colour;
     const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
 
     const isDiagonal = Math.abs(rowChange) === Math.abs(colChange);
@@ -238,7 +261,7 @@ function validRookMove(rowChange, colChange, playingPiece) {
         return false;
     }
 
-    const colour = playingPiece.piece.colour;
+    const colour = playingPiece.colour;
     const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
 
     return noStraightObstruction(target, playingPiece.position, rowChange, colChange, colour);
@@ -249,10 +272,10 @@ function validBishopMove(rowChange, colChange, playingPiece) {
         return false;
     }
 
-    const colour = playingPiece.piece.colour;
+    const colour = playingPiece.colour;
     const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
 
-    return noDiagonalObstruction(target, playingPiece.position, rowChange, colChange, playingPiece.piece.colour);
+    return noDiagonalObstruction(target, playingPiece.position, rowChange, colChange, playingPiece.colour);
 }
 
 function validKnightMove(rowChange, colChange) {
@@ -265,11 +288,12 @@ function validKnightMove(rowChange, colChange) {
 }
 
 function validPawnMove(rowChange, colChange, playingPiece) {
+    // blocked going forward!!
     const [currentCol, currentRow] = playingPiece.position;
-    const startingRow = playingPiece.piece.startingPositions[0][1];
+    const startingRow = playingPiece.startingPositions[0][1];
     const isFirstMove = currentRow === startingRow;
 
-    const colour = playingPiece.piece.colour;
+    const colour = playingPiece.colour;
     const moveDirection = colour === 'white' ? -1 : 1;
 
     const sameColumn = colChange === 0;
@@ -364,7 +388,7 @@ function targetContainsOpponent(targetPosition, colour) {
 
         if (col === targetCol 
             && row === targetRow 
-            && playingPiece.piece.colour !== colour) {
+            && playingPiece.colour !== colour) {
             return true;
         }
     }
@@ -372,27 +396,6 @@ function targetContainsOpponent(targetPosition, colour) {
     return false;
 }
 
-function targetIsOccupied(targetPosition) {
-    for (let key in playingPieces) {
-        const playingPiece = playingPieces[key];
-        const [col, row] = playingPiece.position;
-        const [targetCol, targetRow] = targetPosition;
 
-        if (col === targetCol && row === targetRow) {
-            return true;
-        }
-    }
 
-    return false;
-}
-
-function teamOccupiesTarget(toCol, toRow, pieceColour) {
-    for (var key in playingPieces) {
-        const playingPiece = playingPieces[key];
-        const positionMatches = playingPiece.position[0] === toCol && playingPiece.position[1] === toRow;
-        if (positionMatches) {
-            const colourMatches = playingPiece.piece.colour === pieceColour;
-            return colourMatches;
-        } 
-    }
-}
+export { observe, movePiece, canMovePiece };

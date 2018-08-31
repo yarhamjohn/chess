@@ -15,9 +15,9 @@ class Board extends React.Component {
                 const pieceData = this.getPieceData(col, row);
                 
                 if (pieceData === null) {
-                    squares.push(this.renderSquare(col, row, null, null));
+                    squares.push(this.renderSquare(col, row, null, null, null));
                 } else {
-                    squares.push(this.renderSquare(col, row, pieceData.piece, pieceData.id));
+                    squares.push(this.renderSquare(col, row, pieceData.icon, pieceData.id, pieceData.type));
                 }
             }
             rows.push(
@@ -33,12 +33,12 @@ class Board extends React.Component {
         );
     }
 
-    renderSquare(col, row, piece, id) {
+    renderSquare(col, row, icon, id, type) {
         const keyId = `${col}_${row}`;
         return (
             <div key={keyId} 
                 style={{ width: '25px', height: '25px' }}>
-                <BoardSquare col={col} row={row} piece={piece} id={id}/>
+                <BoardSquare col={col} row={row} icon={icon} id={id} type={type}/>
             </div>
         )
     }
@@ -59,19 +59,17 @@ Board.propTypes = {
     pieces: PropTypes.arrayOf(
         PropTypes.shape({
             id: PropTypes.string.isRequired,
-            piece: PropTypes.shape({
-                type: PropTypes.string.isRequired,
-                icon: PropTypes.string.isRequired,
-                colour: PropTypes.string.isRequired,
-                startingPositions: PropTypes.arrayOf(
-                    PropTypes.arrayOf(
-                        PropTypes.number
-                    )
+            type: PropTypes.string.isRequired,
+            icon: PropTypes.string.isRequired,
+            colour: PropTypes.string.isRequired,
+            startingPositions: PropTypes.arrayOf(
+                PropTypes.arrayOf(
+                    PropTypes.number
                 )
-            }).isRequired,
+            ).isRequired,
             position: PropTypes.arrayOf(PropTypes.number.isRequired).isRequired
         }).isRequired
     ).isRequired
-}
+};
 
 export default DragDropContext(HTML5Backend)(Board);

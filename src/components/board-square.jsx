@@ -30,11 +30,11 @@ function collect(connect, monitor) {
 
 class BoardSquare extends React.Component {
     render() {
-        const { connectDropTarget, isOver, canDrop, piece, id } = this.props;
+        const { connectDropTarget, isOver, canDrop, icon, id, type } = this.props;
         return connectDropTarget(
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <Square colour={this.getSquareColour()}>
-                    {piece !== null && <Piece piece={piece} id={id} />}
+                    {icon && id && <Piece icon={icon} id={id} type={type} />}
                 </Square>
                 {isOver && !canDrop && this.renderOverlay('red')}
                 {!isOver && canDrop && this.renderOverlay('yellow')}
@@ -72,16 +72,8 @@ Square.propTypes = {
     isOver: PropTypes.bool.isRequired,
     canDrop: PropTypes.bool.isRequired,
     id: PropTypes.string,
-    piece: PropTypes.shape({
-        type: PropTypes.string.isRequired,
-        icon: PropTypes.string.isRequired,
-        colour: PropTypes.string.isRequired,
-        startingPositions: PropTypes.arrayOf(
-            PropTypes.arrayOf(
-                PropTypes.number
-            )
-        )
-    })
+    type: PropTypes.string.isRequired,
+    icon: PropTypes.string
 };
 
 export default DropTarget(PieceTypes, squareTarget, collect)(BoardSquare);
