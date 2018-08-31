@@ -225,7 +225,7 @@ function isValidCastle(rowChange, colChange, playingPiece) {
 
     const targetCol = colChange > 0 ? 7 : 0;
     const target = [colChange, playingPiece.position[1]];
-    if (!noStraightObstruction(target, playingPiece.position, rowChange, targetCol - playingPiece.position[0], playingPiece.colour)) {
+    if (!noStraightObstruction(target, playingPiece, rowChange, targetCol - playingPiece.position[0])) {
         return false;
     }
 
@@ -248,80 +248,8 @@ function castleHasMoved(colChange, row) {
     return true;
 }
 
-function validQueenMove(rowChange, colChange, playingPiece) {
-    const colour = playingPiece.colour;
-    const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
-
-    const isDiagonal = Math.abs(rowChange) === Math.abs(colChange);
-    if (isDiagonal) {
-        return noDiagonalObstruction(target, playingPiece.position, rowChange, colChange, colour);
-    }
-
-    const isStraight = rowChange === 0 || colChange === 0;
-    if (isStraight) {
-        return noStraightObstruction(target, playingPiece.position, rowChange, colChange, colour);
-    }
-
-    return false;
-}
-
-function validRookMove(rowChange, colChange, playingPiece) {
-    if (rowChange !== 0 && colChange !== 0) {
-        return false;
-    }
-
-    const colour = playingPiece.colour;
-    const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
-
-    return noStraightObstruction(target, playingPiece.position, rowChange, colChange, colour);
-}
-
-function validBishopMove(rowChange, colChange, playingPiece) {
-    if (Math.abs(rowChange) !== Math.abs(colChange)) {
-        return false;
-    }
-
-    const target = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
-
-    return noDiagonalObstruction(target, playingPiece.position, rowChange, colChange, playingPiece.colour);
-}
-
-function validPawnSpecialMove(rowChange, colChange, playingPiece, pieceColour) {
-    const currentPosition = playingPiece.position;
-    const targetPosition = [currentPosition[0], currentPosition[1] + rowChange];
-    const isFirstMove = !playingPiece.hasMoved;
-    const isObstructed = noStraightObstruction(targetPosition, currentPosition, rowChange, colChange, pieceColour);
-
-    return (isFirstMove && isObstructed);
-}
-
-function validPawnMove(rowChange, colChange, piece) {
-    const playingPiece = getPiece(piece.id);
-    const correctDirection = (piece.colour === 'white' && rowChange < 0) || (piece.colour === 'black' && rowChange > 0);
-
-    const twoRowMove = colChange === 0 && Math.abs(rowChange) === 2;
-    if (twoRowMove && correctDirection) {
-        return validPawnSpecialMove(rowChange, colChange, playingPiece, piece.colour);
-    }
-
-    const oneRowMove = colChange === 0 && Math.abs(rowChange) === 1;
-    if (oneRowMove && correctDirection) {
-        const targetPosition = [playingPiece.position[0], playingPiece.position[1] + rowChange];
-        return !targetIsOccupied(targetPosition);
-    }
-
-    const diagonalMove = Math.abs(colChange) === 1 && Math.abs(rowChange) === 1;
-    if (diagonalMove && correctDirection) {
-        const targetPosition = [playingPiece.position[0] + colChange, playingPiece.position[1] + rowChange];
-        const opponentColour = playingPiece.colour === 'white' ? 'black' : 'white';
-        return targetIsOccupied(targetPosition, opponentColour);
-    }
-
-    return false;
-}
-
-function noStraightObstruction(target, start, rowChange, colChange, colour) {
-    const [startCol, startRow] = start;
+function noStraightObstruction(target, piece, rowChange, colChange) {
+    const [startCol, startRow] = piece.position;
 
     let moveNum = 1;
     if (colChange === 0) {
@@ -350,11 +278,11 @@ function noStraightObstruction(target, start, rowChange, colChange, colour) {
         }
     }
 
-    return !targetIsOccupied(target, colour);
+    return !targetIsOccupied(target, piece.colour);
 }
 
-function noDiagonalObstruction(target, start, rowChange, colChange, colour) {
-    const [startCol, startRow] = start;
+function noDiagonalObstruction(target, piece, rowChange, colChange) {
+    const [startCol, startRow] = piece.position;
     const rowMoveDirection = rowChange / Math.abs(rowChange);
     const colMoveDirection = colChange / Math.abs(colChange);
     const diagonalDistance = Math.abs(colChange);
@@ -371,7 +299,79 @@ function noDiagonalObstruction(target, start, rowChange, colChange, colour) {
         moveNum += 1;
     }
 
-    return !targetIsOccupied(target, colour);
+    return !targetIsOccupied(target, piece.colour);
+}
+
+function validQueenMove(rowChange, colChange, playingPiece) {
+    const [col, row] = playingPiece.position;
+    const target = [col + colChange, row + rowChange];
+
+    const isDiagonal = Math.abs(rowChange) === Math.abs(colChange);
+    if (isDiagonal) {
+        return noDiagonalObstruction(target, playingPiece, rowChange, colChange);
+    }
+
+    const isStraight = rowChange === 0 || colChange === 0;
+    if (isStraight) {
+        return noStraightObstruction(target, playingPiece, rowChange, colChange);
+    }
+
+    return false;
+}
+
+function validRookMove(rowChange, colChange, playingPiece) {
+    if (rowChange !== 0 && colChange !== 0) {
+        return false;
+    }
+
+    const [col, row] = playingPiece.position;
+    const targetPosition = [col + colChange, row + rowChange];
+    return noStraightObstruction(targetPosition, playingPiece, rowChange, colChange);
+}
+
+function validBishopMove(rowChange, colChange, playingPiece) {
+    if (Math.abs(rowChange) !== Math.abs(colChange)) {
+        return false;
+    }
+
+    const [col, row] = playingPiece.position;
+    const targetPosition = [col + colChange, row + rowChange];
+    return noDiagonalObstruction(targetPosition, playingPiece, rowChange, colChange);
+}
+
+function validPawnSpecialMove(rowChange, colChange, playingPiece) {
+    const currentPosition = playingPiece.position;
+    const targetPosition = [currentPosition[0], currentPosition[1] + rowChange];
+    const isFirstMove = !playingPiece.hasMoved;
+    const isObstructed = noStraightObstruction(targetPosition, playingPiece, rowChange, colChange);
+
+    return (isFirstMove && isObstructed);
+}
+
+function validPawnMove(rowChange, colChange, piece) {
+    const playingPiece = getPiece(piece.id);
+    const correctDirection = (piece.colour === 'white' && rowChange < 0) || (piece.colour === 'black' && rowChange > 0);
+
+    const twoRowMove = colChange === 0 && Math.abs(rowChange) === 2;
+    if (twoRowMove && correctDirection) {
+        return validPawnSpecialMove(rowChange, colChange, playingPiece);
+    }
+
+    const oneRowMove = colChange === 0 && Math.abs(rowChange) === 1;
+    if (oneRowMove && correctDirection) {
+        const targetPosition = [playingPiece.position[0], playingPiece.position[1] + rowChange];
+        return !targetIsOccupied(targetPosition);
+    }
+
+    const diagonalMove = Math.abs(colChange) === 1 && Math.abs(rowChange) === 1;
+    if (diagonalMove && correctDirection) {
+        const [col, row] = playingPiece.position;
+        const targetPosition = [col + colChange, row + rowChange];
+        const opponentColour = playingPiece.colour === 'white' ? 'black' : 'white';
+        return targetIsOccupied(targetPosition, opponentColour);
+    }
+
+    return false;
 }
 
 export { observe, movePiece, canMovePiece };
