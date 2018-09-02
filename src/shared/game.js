@@ -2,6 +2,7 @@ import { Pieces } from './constants';
 
 let playingPieces = [];
 let removedPieces = [];
+let currentPlayer = 'white';
 let observer = null;
 
 function reset() {
@@ -11,7 +12,7 @@ function reset() {
 }
 
 function emitChange() {
-    observer(playingPieces);
+    observer(playingPieces, currentPlayer);
 }
 
 function populatePlayingPieces() {
@@ -107,6 +108,10 @@ function targetIsOccupied(targetPosition, pieceColour = null) {
     return targetPiece;
 }
 
+function changePlayer() {
+    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+}
+
 function movePiece(newPosition, pieceId) {
     const pieceToMove = getPieceFromId(pieceId);
     const opponentColour = pieceToMove.colour === 'white' ? 'black' : 'white';
@@ -134,6 +139,7 @@ function movePiece(newPosition, pieceId) {
         promotePawn(newPosition, pieceToMove);
     }
 
+    changePlayer();
     emitChange();
 }
 
@@ -333,7 +339,7 @@ function isValidMove(newPosition, piece) {
 
 function canMovePiece(newPosition, pieceId) {
     const piece = getPieceFromId(pieceId);
-    if (piece) {
+    if (piece && piece.colour === currentPlayer) {
         return isValidMove(newPosition, piece);
     }
 

@@ -1,19 +1,37 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import BoardSquare from './board-square';
-import Piece from './piece';
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
-import { Pieces } from '../shared/constants';
+import BoardSquare from './board-square';
 
 class Board extends React.Component {
+    renderSquare(col, row, icon, id, type) {
+        const keyId = `${col}_${row}`;
+        return (
+            <div key={keyId} style={{ width: '25px', height: '25px' }} >
+                <BoardSquare col={col} row={row} icon={icon} id={id} type={type} />
+            </div>
+        );
+    }
+
+    getPieceData(col, row) {
+        const { pieces } = this.props;
+        for (let i = 0; i < pieces.length; i += 1) {
+            if (pieces[i].position[0] === col && pieces[i].position[1] === row) {
+                return pieces[i];
+            }
+        }
+
+        return null;
+    }
+
     render() {
         const rows = [];
-        for (let row = 0; row < 8; row++) {
+        for (let row = 0; row < 8; row += 1) {
             const squares = [];
-            for (let col = 0; col < 8; col++) {
+            for (let col = 0; col < 8; col += 1) {
                 const pieceData = this.getPieceData(col, row);
-                
+
                 if (pieceData === null) {
                     squares.push(this.renderSquare(col, row, null, null, null));
                 } else {
@@ -21,37 +39,17 @@ class Board extends React.Component {
                 }
             }
             rows.push(
-                <div key={row} style={{display: 'flex'}}>
+                <div key={row} style={{ display: 'flex' }}>
                     {squares}
                 </div>
             )
         }
         return (
             <div>
-                {rows}
+                <h1>It is { this.props.currentPlayer }'s turn</h1>
+                { rows }
             </div>
         );
-    }
-
-    renderSquare(col, row, icon, id, type) {
-        const keyId = `${col}_${row}`;
-        return (
-            <div key={keyId} 
-                style={{ width: '25px', height: '25px' }}>
-                <BoardSquare col={col} row={row} icon={icon} id={id} type={type}/>
-            </div>
-        )
-    }
-
-    getPieceData(col, row) {
-        const { pieces } = this.props;
-        for (let i = 0; i < pieces.length; i++) {
-            if (pieces[i].position[0] === col && pieces[i].position[1] === row) {
-                return pieces[i];
-            }
-        }
-        
-        return null;
     }
 }
 
@@ -69,7 +67,8 @@ Board.propTypes = {
             ).isRequired,
             position: PropTypes.arrayOf(PropTypes.number.isRequired).isRequired
         }).isRequired
-    ).isRequired
+    ).isRequired,
+    currentPlayer: PropTypes.string.isRequired
 };
 
 export default DragDropContext(HTML5Backend)(Board);
