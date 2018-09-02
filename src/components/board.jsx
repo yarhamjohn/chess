@@ -25,6 +25,15 @@ class Board extends React.Component {
         return null;
     }
 
+    getRemovedPieces(colour) {
+        if (this.props.removedPieces.length > 0) {
+            const pieces = this.props.removedPieces.filter(piece => piece.colour === colour);
+            return pieces.map(piece => piece.icon).join(' ');
+        }
+
+        return null;
+    }
+
     render() {
         const rows = [];
         for (let row = 0; row < 8; row += 1) {
@@ -44,10 +53,20 @@ class Board extends React.Component {
                 </div>
             )
         }
+
+        const removedWhitePieces = this.getRemovedPieces('white');
+        const removedBlackPieces = this.getRemovedPieces('black');
         return (
             <div>
                 <h1>It is { this.props.currentPlayer }'s turn</h1>
                 { rows }
+                { this.props.removedPieces.length > 0 && 
+                    <div>
+                        <h1>Removed pieces:</h1>
+                        <p>White: { removedWhitePieces }</p>
+                        <p>Black: { removedBlackPieces }</p>
+                    </div>
+                }
             </div>
         );
     }
@@ -68,7 +87,21 @@ Board.propTypes = {
             position: PropTypes.arrayOf(PropTypes.number.isRequired).isRequired
         }).isRequired
     ).isRequired,
-    currentPlayer: PropTypes.string.isRequired
+    currentPlayer: PropTypes.string.isRequired,
+    removedPieces: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            type: PropTypes.string.isRequired,
+            icon: PropTypes.string.isRequired,
+            colour: PropTypes.string.isRequired,
+            startingPositions: PropTypes.arrayOf(
+                PropTypes.arrayOf(
+                    PropTypes.number
+                )
+            ).isRequired,
+            position: PropTypes.arrayOf(PropTypes.number.isRequired).isRequired
+        })
+    ).isRequired
 };
 
 export default DragDropContext(HTML5Backend)(Board);

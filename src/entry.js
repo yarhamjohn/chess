@@ -6,10 +6,10 @@ import { observe } from './shared/game';
 
 const render = () => {
     const rootEl = document.getElementById('App');
-    observe((pieces, currentPlayer) =>
+    observe((pieces, currentPlayer, removedPieces) =>
         ReactDOM.render(
             <AppContainer>
-                <Board pieces={pieces} currentPlayer={currentPlayer} />
+                <Board pieces={pieces} currentPlayer={currentPlayer} removedPieces={removedPieces} />
             </AppContainer>,
             rootEl
         )

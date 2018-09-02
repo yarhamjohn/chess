@@ -12,7 +12,7 @@ function reset() {
 }
 
 function emitChange() {
-    observer(playingPieces, currentPlayer);
+    observer(playingPieces, currentPlayer, removedPieces);
 }
 
 function populatePlayingPieces() {
