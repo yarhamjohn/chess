@@ -5,15 +5,6 @@ import HTML5Backend from 'react-dnd-html5-backend';
 import BoardSquare from './board-square';
 
 class Board extends React.Component {
-    renderSquare(col, row, icon, id, type) {
-        const keyId = `${col}_${row}`;
-        return (
-            <div key={keyId} style={{ width: '25px', height: '25px' }} >
-                <BoardSquare col={col} row={row} icon={icon} id={id} type={type} />
-            </div>
-        );
-    }
-
     getPieceData(col, row) {
         const { pieces } = this.props;
         for (let i = 0; i < pieces.length; i += 1) {
@@ -34,6 +25,15 @@ class Board extends React.Component {
         return null;
     }
 
+    renderSquare(col, row, icon, id, type) {
+        const keyId = `${col}_${row}`;
+        return (
+            <div key={keyId} style={{ width: '25px', height: '25px' }} >
+                <BoardSquare col={col} row={row} icon={icon} id={id} type={type} />
+            </div>
+        );
+    }
+
     render() {
         const rows = [];
         for (let row = 0; row < 8; row += 1) {
@@ -44,14 +44,16 @@ class Board extends React.Component {
                 if (pieceData === null) {
                     squares.push(this.renderSquare(col, row, null, null, null));
                 } else {
-                    squares.push(this.renderSquare(col, row, pieceData.icon, pieceData.id, pieceData.type));
+                    squares.push(
+                        this.renderSquare(col, row, pieceData.icon, pieceData.id, pieceData.type)
+                    );
                 }
             }
             rows.push(
                 <div key={row} style={{ display: 'flex' }}>
-                    {squares}
+                    { squares }
                 </div>
-            )
+            );
         }
 
         const removedWhitePieces = this.getRemovedPieces('white');
@@ -60,7 +62,7 @@ class Board extends React.Component {
             <div>
                 <h1>It is { this.props.currentPlayer }'s turn</h1>
                 { rows }
-                { this.props.removedPieces.length > 0 && 
+                { this.props.removedPieces.length > 0 &&
                     <div>
                         <h1>Removed pieces:</h1>
                         <p>White: { removedWhitePieces }</p>

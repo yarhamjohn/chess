@@ -4,7 +4,7 @@ import { DragSource } from 'react-dnd';
 
 const pieceSource = {
     beginDrag(props) {
-        return {id: props.id};
+        return { id: props.id };
     }
 };
 
@@ -12,7 +12,7 @@ function collect(connect, monitor) {
     return {
         connectDragSource: connect.dragSource(),
         isDragging: monitor.isDragging()
-    }
+    };
 }
 
 function getDragSourceType(props) {
@@ -24,12 +24,13 @@ class Piece extends React.Component {
         const { connectDragSource, isDragging, icon } = this.props;
         return connectDragSource(
             <span style={{
-                opacity: isDragging ? 0.5 : 1, 
-                cursor: 'move', 
-                fontSize: 20, 
+                opacity: isDragging ? 0.5 : 1,
+                cursor: 'move',
+                fontSize: 20,
                 fontWeight: 'bold'
-            }}>
-                {icon}
+                }}
+            >
+                { icon }
             </span>
         );
     }
