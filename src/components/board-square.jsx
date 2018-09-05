@@ -30,7 +30,10 @@ function collect(connect, monitor) {
 
 class BoardSquare extends React.Component {
     getSquareColour() {
-        const { col, row } = this.props;
+        const { col, row, highlightSquare } = this.props;
+        if (highlightSquare) {
+            return 'lightpink';
+        }
         const isEven = (col + row) % 2 === 1;
         return isEven ? 'white' : 'lightgrey';
     }
@@ -73,7 +76,8 @@ BoardSquare.propTypes = {
     canDrop: PropTypes.bool.isRequired,
     id: PropTypes.string,
     type: PropTypes.string,
-    icon: PropTypes.string
+    icon: PropTypes.string,
+    highlightSquare: PropTypes.bool.isRequired
 };
 
 export default DropTarget(PieceTypes, squareTarget, collect)(BoardSquare);

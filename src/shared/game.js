@@ -5,6 +5,7 @@ let playingPieces = [];
 let removedPieces = [];
 let currentPlayer = 'white';
 let observer = null;
+let kingIsInCheck = false;
 
 function reset() {
     observer = null;
@@ -13,7 +14,7 @@ function reset() {
 }
 
 function emitChange() {
-    observer(playingPieces, currentPlayer, removedPieces);
+    observer(playingPieces, currentPlayer, removedPieces, kingIsInCheck);
 }
 
 function populatePlayingPieces() {
@@ -147,17 +148,6 @@ function performMove(newPosition, pieceToMove) {
     }
 
     return [currentPieces, takenPieces];
-}
-
-function movePiece(newPosition, pieceId) {
-    const pieceToMove = getPieceFromId(playingPieces, pieceId);
-    const [currentPieces, takenPieces] = performMove(newPosition, pieceToMove);
-
-    playingPieces = currentPieces;
-    removedPieces = takenPieces;
-
-    changePlayer();
-    emitChange();
 }
 
 function noStraightObstruction(currentPieces, target, piece, rowChange, colChange) {
@@ -385,15 +375,8 @@ function getInitialPositionsToCheck(kingPosition) {
     return [possibleMoves, positionsToCheck];
 }
 
-function inCheck(king, newPosition, piece) {
-    const [currentPieces, _] = performMove(newPosition, piece);
-
-    let actualKing = king;
-    if (piece.type === 'king') {
-        const movedKing = getPieceFromId(currentPieces, piece.id);
-        actualKing = movedKing;
-    }
-    const [possibleMoves, positionsToCheck] = getInitialPositionsToCheck(actualKing.position);
+function inCheck(currentPieces, king) {
+    const [possibleMoves, positionsToCheck] = getInitialPositionsToCheck(king.position);
 
     let numPositions = positionsToCheck.length;
     while (numPositions > 0) {
@@ -414,11 +397,11 @@ function inCheck(king, newPosition, piece) {
                     const newPositionToCheck = [col + colChange, row + rowChange];
                     positionsToCheck[i] = newPositionToCheck;
                 }
-            } else if (pieceToCheck.colour === piece.colour) {
+            } else if (pieceToCheck.colour === king.colour) {
                 positionsToCheck.splice(i, 1);
                 possibleMoves.splice(i, 1);
             } else {
-                const pieceIsChecking = isCheckingPiece(pieceToCheck, actualKing);
+                const pieceIsChecking = isCheckingPiece(pieceToCheck, king);
                 if (pieceIsChecking) {
                     return true;
                 }
@@ -473,8 +456,15 @@ function isValidMove(newPosition, piece) {
     }
 
     if (validMove) {
-        const king = getKing(currentPieces, piece.colour);
-        const leftInCheck = inCheck(king, newPosition, piece);
+        let king = getKing(currentPieces, piece.colour);
+
+        const [updatedPieces, _] = performMove(newPosition, piece);
+        if (piece.type === 'king') {
+            const movedKing = getPieceFromId(updatedPieces, piece.id);
+            king = movedKing;
+        }
+
+        const leftInCheck = inCheck(updatedPieces, king);
         return !leftInCheck;
     }
 
@@ -488,6 +478,19 @@ function canMovePiece(newPosition, pieceId) {
     }
 
     return false;
+}
+
+function movePiece(newPosition, pieceId) {
+    const pieceToMove = getPieceFromId(playingPieces, pieceId);
+    const [currentPieces, takenPieces] = performMove(newPosition, pieceToMove);
+
+    playingPieces = currentPieces;
+    removedPieces = takenPieces;
+
+    changePlayer();
+    kingIsInCheck = inCheck(currentPieces, getKing(currentPieces, currentPlayer));
+
+    emitChange();
 }
 
 export { observe, movePiece, canMovePiece };

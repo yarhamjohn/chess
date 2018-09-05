@@ -25,11 +25,12 @@ class Board extends React.Component {
         return null;
     }
 
-    renderSquare(col, row, icon, id, type) {
+    renderSquare(col, row, icon, id, type, colour) {
         const keyId = `${col}_${row}`;
+        const highlightSquare = this.props.inCheck && type === 'king' && this.props.currentPlayer === colour;
         return (
             <div key={keyId} style={{ width: '25px', height: '25px' }} >
-                <BoardSquare col={col} row={row} icon={icon} id={id} type={type} />
+                <BoardSquare col={col} row={row} icon={icon} id={id} type={type} highlightSquare={highlightSquare} />
             </div>
         );
     }
@@ -40,12 +41,13 @@ class Board extends React.Component {
             const squares = [];
             for (let col = 0; col < 8; col += 1) {
                 const pieceData = this.getPieceData(col, row);
-
                 if (pieceData === null) {
-                    squares.push(this.renderSquare(col, row, null, null, null));
+                    squares.push(
+                        this.renderSquare(col, row, null, null, null, null)
+                    );
                 } else {
                     squares.push(
-                        this.renderSquare(col, row, pieceData.icon, pieceData.id, pieceData.type)
+                        this.renderSquare(col, row, pieceData.icon, pieceData.id, pieceData.type, pieceData.colour)
                     );
                 }
             }
@@ -103,7 +105,8 @@ Board.propTypes = {
             ).isRequired,
             position: PropTypes.arrayOf(PropTypes.number.isRequired).isRequired
         })
-    ).isRequired
+    ).isRequired,
+    inCheck: PropTypes.bool.isRequired
 };
 
 export default DragDropContext(HTML5Backend)(Board);
