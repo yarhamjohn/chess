@@ -190,6 +190,9 @@ function noStraightObstruction(currentPieces, target, piece, rowChange, colChang
         }
     }
 
+    if (piece.type === 'pawn') {
+        return !targetIsOccupied(currentPieces, target);
+    }
     return !targetIsOccupied(currentPieces, target, piece.colour);
 }
 
@@ -349,19 +352,20 @@ function isCheckingPiece(pieceToCheck, king) {
 
     const absRowChange = Math.abs(kingRow - pieceRow);
     const absColChange = Math.abs(kingCol - pieceCol);
-    if (pieceToCheck.type === 'knight' && ((absRowChange === 1 && absColChange === 2) || (absRowChange === 2 && absColChange === 1))) {
+    const validMoveOne = (absRowChange === 1 && absColChange === 2);
+    const validMoveTwo = (absRowChange === 2 && absColChange === 1);
+    if (pieceToCheck.type === 'knight' && (validMoveOne || validMoveTwo)) {
         return true;
     }
 
     return false;
 }
 
-function inCheck(king, newPosition, piece) {
-    const [currentPieces, _] = performMove(newPosition, piece);
-    const [kingCol, kingRow] = king.position;
-
+function getInitialPositionsToCheck(kingPosition) {
+    const [kingCol, kingRow] = kingPosition;
     const possibleMoves = [];
     const positionsToCheck = [];
+
     for (let col = kingCol - 1; col <= kingCol + 1; col += 1) {
         const colIsOnBoard = col >= 0 && col <= 7;
         if (colIsOnBoard) {
@@ -378,6 +382,19 @@ function inCheck(king, newPosition, piece) {
         }
     }
 
+    return [possibleMoves, positionsToCheck];
+}
+
+function inCheck(king, newPosition, piece) {
+    const [currentPieces, _] = performMove(newPosition, piece);
+
+    let actualKing = king;
+    if (piece.type === 'king') {
+        const movedKing = getPieceFromId(currentPieces, piece.id);
+        actualKing = movedKing;
+    }
+    const [possibleMoves, positionsToCheck] = getInitialPositionsToCheck(actualKing.position);
+
     let numPositions = positionsToCheck.length;
     while (numPositions > 0) {
         for (let i = numPositions - 1; i >= 0; i -= 1) {
@@ -386,23 +403,28 @@ function inCheck(king, newPosition, piece) {
                 const [colChange, rowChange] = possibleMoves[i];
                 const [col, row] = positionsToCheck[i];
 
-                if ((col === 0 && colChange === -1) || (col === 7 && colChange === 1) || (row === 0 && rowChange === -1) || (row === 7 && rowChange === 1)) {
-                    positionsToCheck.splice(i);
-                    possibleMoves.splice(i);
+                const goesOffBoardLeft = (col === 0 && colChange === -1);
+                const goesOffBoardRight = (col === 7 && colChange === 1);
+                const goesOffBoardTop = (row === 0 && rowChange === -1);
+                const goesOffBoardBottom = (row === 7 && rowChange === 1);
+                if (goesOffBoardLeft || goesOffBoardRight || goesOffBoardTop || goesOffBoardBottom) {
+                    positionsToCheck.splice(i, 1);
+                    possibleMoves.splice(i, 1);
                 } else {
-                    positionsToCheck[i] = [col + colChange, row + rowChange];
+                    const newPositionToCheck = [col + colChange, row + rowChange];
+                    positionsToCheck[i] = newPositionToCheck;
                 }
             } else if (pieceToCheck.colour === piece.colour) {
-                positionsToCheck.splice(i);
-                possibleMoves.splice(i);
+                positionsToCheck.splice(i, 1);
+                possibleMoves.splice(i, 1);
             } else {
-                const pieceIsChecking = isCheckingPiece(pieceToCheck, king);
+                const pieceIsChecking = isCheckingPiece(pieceToCheck, actualKing);
                 if (pieceIsChecking) {
                     return true;
                 }
 
-                positionsToCheck.splice(i);
-                possibleMoves.splice(i);
+                positionsToCheck.splice(i, 1);
+                possibleMoves.splice(i, 1);
             }
         }
 
