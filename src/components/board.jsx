@@ -62,7 +62,11 @@ class Board extends React.Component {
         const removedBlackPieces = this.getRemovedPieces('black');
         return (
             <div>
-                <h1>It is { this.props.currentPlayer }'s turn</h1>
+                { this.props.gameWon ?
+                    <h1>{ this.props.currentPlayer } has lost!</h1>
+                    :
+                    <h1>It is { this.props.currentPlayer }'s turn</h1>
+                }
                 { rows }
                 { this.props.removedPieces.length > 0 &&
                     <div>
@@ -106,7 +110,8 @@ Board.propTypes = {
             position: PropTypes.arrayOf(PropTypes.number.isRequired).isRequired
         })
     ).isRequired,
-    inCheck: PropTypes.bool.isRequired
+    inCheck: PropTypes.bool.isRequired,
+    gameWon: PropTypes.bool.isRequired
 };
 
 export default DragDropContext(HTML5Backend)(Board);

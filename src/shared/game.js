@@ -6,6 +6,7 @@ let removedPieces = [];
 let currentPlayer = 'white';
 let observer = null;
 let kingIsInCheck = false;
+let winner = false;
 
 function reset() {
     observer = null;
@@ -14,7 +15,7 @@ function reset() {
 }
 
 function emitChange() {
-    observer(playingPieces, currentPlayer, removedPieces, kingIsInCheck);
+    observer(playingPieces, currentPlayer, removedPieces, kingIsInCheck, winner);
 }
 
 function populatePlayingPieces() {
@@ -480,6 +481,24 @@ function canMovePiece(newPosition, pieceId) {
     return false;
 }
 
+function isCheckmate(currentPieces, colour) {
+    const teamPieces = currentPieces.filter(piece => piece.colour === colour);
+
+    let numMoveablePieces = 0;
+    for (let col = 0; col <= 7; col += 1) {
+        for (let row = 0; row <= 7; row += 1) {
+            for (let i = 0; i < teamPieces.length; i += 1) {
+                const pieceCanMove = isValidMove([col, row], teamPieces[i]);
+                if (pieceCanMove) {
+                    numMoveablePieces += 1;
+                }
+            }
+        }
+    }
+
+    return numMoveablePieces === 0;
+}
+
 function movePiece(newPosition, pieceId) {
     const pieceToMove = getPieceFromId(playingPieces, pieceId);
     const [currentPieces, takenPieces] = performMove(newPosition, pieceToMove);
@@ -489,6 +508,9 @@ function movePiece(newPosition, pieceId) {
 
     changePlayer();
     kingIsInCheck = inCheck(currentPieces, getKing(currentPieces, currentPlayer));
+    if (kingIsInCheck) {
+        winner = isCheckmate(currentPieces, currentPlayer);
+    }
 
     emitChange();
 }
