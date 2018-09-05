@@ -55,7 +55,7 @@ class BoardSquare extends React.Component {
         return connectDropTarget(
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <Square colour={this.getSquareColour()}>
-                    { icon && id && <Piece icon={icon} id={id} type={type} />}
+                    { icon && id && type && <Piece icon={icon} id={id} type={type} />}
                 </Square>
                 { isOver && !canDrop && this.renderOverlay('red') }
                 { !isOver && canDrop && this.renderOverlay('yellow') }
@@ -72,7 +72,7 @@ BoardSquare.propTypes = {
     isOver: PropTypes.bool.isRequired,
     canDrop: PropTypes.bool.isRequired,
     id: PropTypes.string,
-    type: PropTypes.string.isRequired,
+    type: PropTypes.string,
     icon: PropTypes.string
 };
 

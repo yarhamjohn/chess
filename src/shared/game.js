@@ -1,3 +1,4 @@
+import cloneDeep from 'clone-deep';
 import { Pieces } from './constants';
 
 let playingPieces = [];
@@ -78,7 +79,7 @@ function getPieceFromPosition(currentPieces, piecePosition) {
 }
 
 function promotePawn(currentPieces, takenPieces, newPosition, pawn) {
-    const queens = playingPieces.concat(removedPieces).filter(piece => piece.type === 'queen' && piece.colour === pawn.colour);
+    const queens = currentPieces.concat(takenPieces).filter(piece => piece.type === 'queen' && piece.colour === pawn.colour);
     const splitQueenId = queens[0].id.split('_');
     const newQueen = queens[0];
     newQueen.id = splitQueenId[0].concat('_', splitQueenId[1], '_', queens.length);
@@ -110,7 +111,7 @@ function targetIsOccupied(currentPieces, targetPosition, pieceColour = null) {
         return targetPiece.colour === pieceColour;
     }
 
-    return targetPiece;
+    return targetPiece === undefined ? false : targetPiece;
 }
 
 function changePlayer() {
@@ -118,8 +119,8 @@ function changePlayer() {
 }
 
 function performMove(newPosition, pieceToMove) {
-    let currentPieces = [...playingPieces];
-    let takenPieces = [...removedPieces];
+    let currentPieces = cloneDeep(playingPieces);
+    let takenPieces = cloneDeep(removedPieces);
     
     const opponentColour = pieceToMove.colour === 'white' ? 'black' : 'white';
 
@@ -327,57 +328,135 @@ function validPawnMove(currentPieces, rowChange, colChange, piece) {
     return false;
 }
 
-function isInCheck() {
-// copy list
-// make move on copy
+function isCheckingPiece(pieceToCheck, king) {
+    const [pieceCol, pieceRow] = pieceToCheck.position;
+    const [kingCol, kingRow] = king.position;
 
-// set up list of all move directions
-// set up list of all initial positions to check around the king
+    const sameRowOrColumn = kingCol === pieceCol || kingRow === pieceRow;
+    if (sameRowOrColumn && (pieceToCheck.type === 'rook' || pieceToCheck.type === 'queen')) {
+        return true;
+    }
 
-// while length of pos list is > 0
-// for each pos
-// get Piece
-// if same team, remove pos and mvoe from lists
-// if empty, increment pos by move unless pos is already at board edge in which case remove pos and move from lists
-// if opponent call isCheckingPiece
-// if true return true
-// if false remove pos and move from list
+    const diagonalMove = Math.abs(kingCol - pieceCol) === Math.abs(kingRow - pieceRow);
+    if (diagonalMove && (pieceToCheck.type === 'bishop' || pieceToCheck.type === 'queen')) {
+        return true;
+    }
+
+    const pawnRow = king.colour === 'white' ? kingRow - 1 : kingRow + 1;
+    if (pieceToCheck.type === 'pawn' && pieceRow === pawnRow && (pieceCol === kingCol + 1 || pieceCol === kingCol - 1)) {
+        return true;
+    }
+
+    const absRowChange = Math.abs(kingRow - pieceRow);
+    const absColChange = Math.abs(kingCol - pieceCol);
+    if (pieceToCheck.type === 'knight' && ((absRowChange === 1 && absColChange === 2) || (absRowChange === 2 && absColChange === 1))) {
+        return true;
+    }
+
+    return false;
 }
 
-function isCheckingPiece() {
-// if same row or col and rook or queen return true
-// if diagonal and bishop or queen return true
-// if pawn and in specific places return true
-// if knight and in specific places return true
-// return false
+function inCheck(king, newPosition, piece) {
+    const [currentPieces, _] = performMove(newPosition, piece);
+    const [kingCol, kingRow] = king.position;
+
+    const possibleMoves = [];
+    const positionsToCheck = [];
+    for (let col = kingCol - 1; col <= kingCol + 1; col += 1) {
+        const colIsOnBoard = col >= 0 && col <= 7;
+        if (colIsOnBoard) {
+            for (let row = kingRow - 1; row <= kingRow + 1; row += 1) {
+                const rowIsOnBoard = row >= 0 && row <= 7;
+                if (rowIsOnBoard) {
+                    const isKingPosition = row === kingRow && col === kingCol;
+                    if (!isKingPosition) {
+                        possibleMoves.push([col - kingCol, row - kingRow]);
+                        positionsToCheck.push([col, row]);
+                    }
+                }
+            }
+        }
+    }
+
+    let numPositions = positionsToCheck.length;
+    while (numPositions > 0) {
+        for (let i = numPositions - 1; i >= 0; i -= 1) {
+            const pieceToCheck = getPieceFromPosition(currentPieces, positionsToCheck[i]);
+            if (pieceToCheck === undefined) {
+                const [colChange, rowChange] = possibleMoves[i];
+                const [col, row] = positionsToCheck[i];
+
+                if ((col === 0 && colChange === -1) || (col === 7 && colChange === 1) || (row === 0 && rowChange === -1) || (row === 7 && rowChange === 1)) {
+                    positionsToCheck.splice(i);
+                    possibleMoves.splice(i);
+                } else {
+                    positionsToCheck[i] = [col + colChange, row + rowChange];
+                }
+            } else if (pieceToCheck.colour === piece.colour) {
+                positionsToCheck.splice(i);
+                possibleMoves.splice(i);
+            } else {
+                const pieceIsChecking = isCheckingPiece(pieceToCheck, king);
+                if (pieceIsChecking) {
+                    return true;
+                }
+
+                positionsToCheck.splice(i);
+                possibleMoves.splice(i);
+            }
+        }
+
+        numPositions = positionsToCheck.length;
+    }
+
+    return false;
+}
+
+function getKing(currentPieces, colour) {
+    return currentPieces.filter(piece => piece.type === 'king' && piece.colour === colour)[0];
 }
 
 function isValidMove(newPosition, piece) {
-    const currentPieces = [...playingPieces];
-
+    const currentPieces = cloneDeep(playingPieces);
     const rowChange = newPosition[1] - piece.position[1];
     const colChange = newPosition[0] - piece.position[0];
 
     const pieceUnmoved = rowChange === 0 && colChange === 0;
     const targetOccupiedByTeam = targetIsOccupied(currentPieces, newPosition, piece.colour);
+
     if (pieceUnmoved || targetOccupiedByTeam) {
         return false;
     }
 
+    let validMove = false;
     switch (piece.type) {
         case 'king':
-            return validKingMove(currentPieces, rowChange, colChange, piece);
+            validMove = validKingMove(currentPieces, rowChange, colChange, piece);
+            break;
         case 'queen':
-            return validQueenMove(currentPieces, rowChange, colChange, piece);
+            validMove = validQueenMove(currentPieces, rowChange, colChange, piece);
+            break;
         case 'rook':
-            return validRookMove(currentPieces, rowChange, colChange, piece);
+            validMove = validRookMove(currentPieces, rowChange, colChange, piece);
+            break;
         case 'bishop':
-            return validBishopMove(currentPieces, rowChange, colChange, piece);
+            validMove = validBishopMove(currentPieces, rowChange, colChange, piece);
+            break;
         case 'knight':
-            return validKnightMove(rowChange, colChange);
+            validMove = validKnightMove(rowChange, colChange);
+            break;
         default:
-            return validPawnMove(currentPieces, rowChange, colChange, piece);
+            validMove = validPawnMove(currentPieces, rowChange, colChange, piece);
+
     }
+
+    if (validMove) {
+        const king = getKing(currentPieces, piece.colour);
+        const leftInCheck = inCheck(king, newPosition, piece);
+        return !leftInCheck;
+    }
+
+    return false;
 }
 
 function canMovePiece(newPosition, pieceId) {
