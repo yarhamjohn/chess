@@ -83,7 +83,7 @@ function getPieceFromPosition(currentPieces, piecePosition) {
 function promotePawn(currentPieces, takenPieces, newPosition, pawn) {
     const queens = currentPieces.concat(takenPieces).filter(piece => piece.type === 'queen' && piece.colour === pawn.colour);
     const splitQueenId = queens[0].id.split('_');
-    const newQueen = queens[0];
+    const newQueen = cloneDeep(queens)[0];
     newQueen.id = splitQueenId[0].concat('_', splitQueenId[1], '_', queens.length);
     newQueen.position = newPosition;
     newQueen.hasMoved = true;
