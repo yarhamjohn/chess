@@ -7,6 +7,7 @@ let currentPlayer = 'white';
 let observer = null;
 let kingIsInCheck = false;
 let winner = false;
+let stalemate = false;
 
 function reset() {
     observer = null;
@@ -15,7 +16,7 @@ function reset() {
 }
 
 function emitChange() {
-    observer(playingPieces, currentPlayer, removedPieces, kingIsInCheck, winner);
+    observer(playingPieces, currentPlayer, removedPieces, kingIsInCheck, winner, stalemate);
 }
 
 function populatePlayingPieces() {
@@ -233,10 +234,19 @@ function isValidCastle(currentPieces, rowChange, colChange, playingPiece) {
     return noStraightObstruction(currentPieces, targetPosition, playingPiece, rowChange, columnsToCastle);
 }
 
+function squareIsAttacked(targetSquare) {
+
+}
+
 function validKingMove(currentPieces, rowChange, colChange, playingPiece) {
     const castlingMove = Math.abs(rowChange) === 0 && Math.abs(colChange) === 2;
-    if (castlingMove) {
-        return isValidCastle(currentPieces, rowChange, colChange, playingPiece);
+    const kingInCheck = inCheck(currentPieces, playingPiece.position, playingPiece.colour);
+    if (castlingMove && !kingInCheck) {
+        const targetSquare = colChange > 0 ? [playingPiece.position[0] + 1, playingPiece.position[1]] : [playingPiece.position[0] - 1, playingPiece.position[1]];
+        const castleSquareIsAttacked = inCheck(currentPieces, targetSquare, playingPiece.colour);
+        if (!castleSquareIsAttacked) {
+            return isValidCastle(currentPieces, rowChange, colChange, playingPiece);
+        }
     }
 
     const standardMove = Math.abs(rowChange) <= 1 && Math.abs(colChange) <= 1;
@@ -322,27 +332,32 @@ function validPawnMove(currentPieces, rowChange, colChange, piece) {
     return false;
 }
 
-function isCheckingPiece(pieceToCheck, king) {
+function isCheckingPiece(pieceToCheck, targetPosition, targetColour) {
     const [pieceCol, pieceRow] = pieceToCheck.position;
-    const [kingCol, kingRow] = king.position;
+    const [kingCol, kingRow] = targetPosition;
+    const absColChange = Math.abs(kingCol - pieceCol);
+    const absRowChange = Math.abs(kingRow - pieceRow);
 
     const sameRowOrColumn = kingCol === pieceCol || kingRow === pieceRow;
     if (sameRowOrColumn && (pieceToCheck.type === 'rook' || pieceToCheck.type === 'queen')) {
         return true;
     }
 
-    const diagonalMove = Math.abs(kingCol - pieceCol) === Math.abs(kingRow - pieceRow);
+    const diagonalMove = absColChange === absRowChange;
     if (diagonalMove && (pieceToCheck.type === 'bishop' || pieceToCheck.type === 'queen')) {
         return true;
     }
 
-    const pawnRow = king.colour === 'white' ? kingRow - 1 : kingRow + 1;
+    const kingMove = (absColChange <= 1 && absRowChange <= 1 && !(absColChange === 0 && absRowChange === 0));
+    if (pieceToCheck.type === 'king' && kingMove) {
+        return true;
+    }
+
+    const pawnRow = targetColour === 'white' ? kingRow - 1 : kingRow + 1;
     if (pieceToCheck.type === 'pawn' && pieceRow === pawnRow && (pieceCol === kingCol + 1 || pieceCol === kingCol - 1)) {
         return true;
     }
 
-    const absRowChange = Math.abs(kingRow - pieceRow);
-    const absColChange = Math.abs(kingCol - pieceCol);
     const validMoveOne = (absRowChange === 1 && absColChange === 2);
     const validMoveTwo = (absRowChange === 2 && absColChange === 1);
     if (pieceToCheck.type === 'knight' && (validMoveOne || validMoveTwo)) {
@@ -376,8 +391,8 @@ function getInitialPositionsToCheck(kingPosition) {
     return [possibleMoves, positionsToCheck];
 }
 
-function inCheck(currentPieces, king) {
-    const [possibleMoves, positionsToCheck] = getInitialPositionsToCheck(king.position);
+function inCheck(currentPieces, targetPosition, targetColour) {
+    const [possibleMoves, positionsToCheck] = getInitialPositionsToCheck(targetPosition);
 
     let numPositions = positionsToCheck.length;
     while (numPositions > 0) {
@@ -398,11 +413,11 @@ function inCheck(currentPieces, king) {
                     const newPositionToCheck = [col + colChange, row + rowChange];
                     positionsToCheck[i] = newPositionToCheck;
                 }
-            } else if (pieceToCheck.colour === king.colour) {
+            } else if (pieceToCheck.colour === targetColour) {
                 positionsToCheck.splice(i, 1);
                 possibleMoves.splice(i, 1);
             } else {
-                const pieceIsChecking = isCheckingPiece(pieceToCheck, king);
+                const pieceIsChecking = isCheckingPiece(pieceToCheck, targetPosition, targetColour);
                 if (pieceIsChecking) {
                     return true;
                 }
@@ -465,7 +480,7 @@ function isValidMove(newPosition, piece) {
             king = movedKing;
         }
 
-        const leftInCheck = inCheck(updatedPieces, king);
+        const leftInCheck = inCheck(updatedPieces, king.position, king.colour);
         return !leftInCheck;
     }
 
@@ -481,7 +496,7 @@ function canMovePiece(newPosition, pieceId) {
     return false;
 }
 
-function isCheckmate(currentPieces, colour) {
+function noValidMovesRemaining(currentPieces, colour) {
     const teamPieces = currentPieces.filter(piece => piece.colour === colour);
 
     let numMoveablePieces = 0;
@@ -499,6 +514,18 @@ function isCheckmate(currentPieces, colour) {
     return numMoveablePieces === 0;
 }
 
+function winIsImpossible(currentPieces) {
+    const blackPieces = currentPieces.filter(piece => piece.colour === 'black' && piece.type !== 'king');
+    const whitePieces = currentPieces.filter(piece => piece.colour === 'white' && piece.type !== 'king');
+    const numBlackPieces = blackPieces.length;
+    const numWhitePieces = whitePieces.length;
+
+    const onlyKingsLeft = numBlackPieces === 0 && numWhitePieces === 0;
+    const onlyOneKnight = (numBlackPieces === 0 && numWhitePieces === 1 && whitePieces[0].type === 'knight') || (numBlackPieces === 1 && blackPieces[0].type === 'knight' && numWhitePieces === 0);
+    const onlyOneBishop = (numBlackPieces === 0 && numWhitePieces === 1 && whitePieces[0].type === 'bishop') || (numBlackPieces === 1 && blackPieces[0].type === 'bishop' && numWhitePieces === 0);
+    return onlyKingsLeft || onlyOneBishop || onlyOneKnight;
+}
+
 function movePiece(newPosition, pieceId) {
     const pieceToMove = getPieceFromId(playingPieces, pieceId);
     const [currentPieces, takenPieces] = performMove(newPosition, pieceToMove);
@@ -507,10 +534,19 @@ function movePiece(newPosition, pieceId) {
     removedPieces = takenPieces;
 
     changePlayer();
-    kingIsInCheck = inCheck(currentPieces, getKing(currentPieces, currentPlayer));
+    const king = getKing(currentPieces, currentPlayer);
+    kingIsInCheck = inCheck(currentPieces, king.position, king.colour);
+    const noValidMoves = noValidMovesRemaining(currentPieces, currentPlayer);
     if (kingIsInCheck) {
-        winner = isCheckmate(currentPieces, currentPlayer);
+        winner = noValidMoves;
     }
+
+    const gameCannotBeWon = winIsImpossible(currentPieces);
+    stalemate = noValidMoves || gameCannotBeWon;
+
+    // what about unlikely wins?
+    // options on promotion
+    // en passant
 
     emitChange();
 }

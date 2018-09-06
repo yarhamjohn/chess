@@ -35,6 +35,16 @@ class Board extends React.Component {
         );
     }
 
+    gameStatusMessage() {
+        if (this.props.gameWon) {
+            return `${this.props.currentPlayer} has lost!`;
+        } else if (this.props.stalemate) {
+            return 'The game is a draw.';
+        }
+
+        return `It is ${this.props.currentPlayer}'s turn`;
+    }
+
     render() {
         const rows = [];
         for (let row = 0; row < 8; row += 1) {
@@ -62,11 +72,7 @@ class Board extends React.Component {
         const removedBlackPieces = this.getRemovedPieces('black');
         return (
             <div>
-                { this.props.gameWon ?
-                    <h1>{ this.props.currentPlayer } has lost!</h1>
-                    :
-                    <h1>It is { this.props.currentPlayer }'s turn</h1>
-                }
+                { this.gameStatusMessage() }
                 { rows }
                 { this.props.removedPieces.length > 0 &&
                     <div>
@@ -111,7 +117,8 @@ Board.propTypes = {
         })
     ).isRequired,
     inCheck: PropTypes.bool.isRequired,
-    gameWon: PropTypes.bool.isRequired
+    gameWon: PropTypes.bool.isRequired,
+    stalemate: PropTypes.bool.isRequired
 };
 
 export default DragDropContext(HTML5Backend)(Board);
