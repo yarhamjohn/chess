@@ -32,7 +32,9 @@ function populatePlayingPieces() {
                     colour: piece.colour,
                     startingPositions: piece.startingPositions,
                     position: piece.startingPositions[i],
-                    hasMoved: false
+                    hasMoved: false,
+                    vulnerableToEnPassant: false,
+                    canEnPassant: false
                 }
             );
         }
@@ -46,6 +48,28 @@ function observe(o) {
     observer = o;
     populatePlayingPieces();
     emitChange();
+}
+
+function updateCanEnPassant(pieces, pieceToMove, canEnPassant) {
+    const currentPieces = pieces;
+    Object.keys(currentPieces).forEach((key) => {
+        if (currentPieces[key].id === pieceToMove.id) {
+            currentPieces[key].canEnPassant = canEnPassant;
+        }
+    });
+
+    return currentPieces;
+}
+
+function updateVulnerableToEnPassant(pieces, pieceToMove, vulnerableToEnPassant) {
+    const currentPieces = pieces;
+    Object.keys(currentPieces).forEach((key) => {
+        if (currentPieces[key].id === pieceToMove.id) {
+            currentPieces[key].vulnerableToEnPassant = vulnerableToEnPassant;
+        }
+    });
+
+    return currentPieces;
 }
 
 function updatePiecePosition(pieces, newPosition, pieceToMove) {
@@ -121,6 +145,30 @@ function changePlayer() {
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
 }
 
+function isEnPassantMove(currentPieces, newPosition, attackingPawn) {
+    const vulnerablePawns = currentPieces.filter(piece => piece.vulnerableToEnPassant)
+    if (vulnerablePawns.length === 0) {
+        return false;
+    }
+
+    const vulnerablePawn = vulnerablePawns[0];
+    const canEnPassant = attackingPawn.canEnPassant;
+    const sameColumn = newPosition[0] === vulnerablePawn.position[0];
+    const correctRow = attackingPawn.colour === 'white' ? newPosition[1] === vulnerablePawn.position[1] - 1 : newPosition[1] === vulnerablePawn.position[1] + 1;
+    const targetsVulnerablePawn = sameColumn && correctRow;
+    return canEnPassant || targetsVulnerablePawn;
+}
+
+function getEnPassantPawns(currentPieces, newPosition, pawnColour) {
+    const opponentColour = pawnColour === 'white' ? 'black' : 'white';
+    return currentPieces.filter(piece =>
+        piece.type === 'pawn'
+            && opponentColour
+            && piece.position[1] === newPosition[1]
+            && Math.abs(newPosition[0] - piece.position[0]) === 1
+    );
+}
+
 function performMove(newPosition, pieceToMove) {
     let currentPieces = cloneDeep(playingPieces);
     let takenPieces = cloneDeep(removedPieces);
@@ -132,6 +180,29 @@ function performMove(newPosition, pieceToMove) {
     if (castlingMove) {
         currentPieces = performCastle(currentPieces, pieceToMove, newPosition);
         return [currentPieces, takenPieces];
+    }
+
+    const enPassantMove = isEnPassantMove(currentPieces, newPosition, pieceToMove);
+    if (enPassantMove) {
+        const targetRow = pieceToMove.colour === 'white' ? newPosition[1] + 1 : newPosition[1] - 1;
+        const vulnerablePawn = getPieceFromPosition(currentPieces, [newPosition[0], targetRow]);
+
+        currentPieces = updateCanEnPassant(currentPieces, pieceToMove, false);
+        vulnerablePawn.vulnerableToEnPassant = false;
+        [currentPieces, takenPieces] = removePieceFromBoard(currentPieces, takenPieces, vulnerablePawn);
+    }
+
+    const rowChange = Math.abs(pieceToMove.position[1] - newPosition[1]);
+    const isPawnSpecialMove = pieceToMove.type === 'pawn' && rowChange === 2;
+    if (isPawnSpecialMove) {
+        const enPassantPawns = getEnPassantPawns(currentPieces, newPosition, pieceToMove.colour);
+        if (enPassantPawns.length > 0) {
+            for (let i = 0; i < enPassantPawns.length; i += 1) {
+                currentPieces = updateCanEnPassant(currentPieces, enPassantPawns[i], true);
+            }
+
+            updateVulnerableToEnPassant(currentPieces, pieceToMove, true);
+        }
     }
 
     const targetContainsOpponent = targetIsOccupied(currentPieces, newPosition, opponentColour);
@@ -234,10 +305,6 @@ function isValidCastle(currentPieces, rowChange, colChange, playingPiece) {
     return noStraightObstruction(currentPieces, targetPosition, playingPiece, rowChange, columnsToCastle);
 }
 
-function squareIsAttacked(targetSquare) {
-
-}
-
 function validKingMove(currentPieces, rowChange, colChange, playingPiece) {
     const castlingMove = Math.abs(rowChange) === 0 && Math.abs(colChange) === 2;
     const kingInCheck = inCheck(currentPieces, playingPiece.position, playingPiece.colour);
@@ -326,7 +393,7 @@ function validPawnMove(currentPieces, rowChange, colChange, piece) {
         const [col, row] = playingPiece.position;
         const targetPosition = [col + colChange, row + rowChange];
         const opponentColour = playingPiece.colour === 'white' ? 'black' : 'white';
-        return targetIsOccupied(currentPieces, targetPosition, opponentColour);
+        return targetIsOccupied(currentPieces, targetPosition, opponentColour) || isEnPassantMove(currentPieces, targetPosition, playingPiece);
     }
 
     return false;
@@ -546,7 +613,6 @@ function movePiece(newPosition, pieceId) {
 
     // what about unlikely wins?
     // options on promotion
-    // en passant
 
     emitChange();
 }
