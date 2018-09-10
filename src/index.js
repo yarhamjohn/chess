@@ -1,3 +1,5 @@
+import setupEvents from './installer/SetupEvents';
+
 import { app, BrowserWindow } from 'electron';
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { enableLiveReload } from 'electron-compile';
@@ -11,6 +13,12 @@ const isDevMode = process.execPath.match(/[\\/]electron/);
 if (isDevMode) enableLiveReload({ strategy: 'react-hmr' });
 
 const createWindow = async () => {
+   //handle setupevents as quickly as possible
+ if (setupEvents.handleSquirrelEvent()) {
+    // squirrel event handled and app will exit in 1000ms, so don't do anything else
+    return;
+ }
+ 
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
