@@ -40,23 +40,14 @@ class BoardSquare extends React.Component {
 
     renderOverlay(color) {
         return (
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                height: '100%',
-                width: '100%',
-                zIndex: 1,
-                opacity: 0.5,
-                backgroundColor: color }}
-            />
+            <div style={{ backgroundColor: color }} className="board-square--overlay" />
         );
     }
 
       render() {
         const { connectDropTarget, isOver, canDrop, icon, id, type } = this.props;
         return connectDropTarget(
-            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div className="board-square" >
                 <Square colour={this.getSquareColour()}>
                     { icon && id && type && <Piece icon={icon} id={id} type={type} />}
                 </Square>

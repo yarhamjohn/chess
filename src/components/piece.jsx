@@ -23,13 +23,7 @@ class Piece extends React.Component {
     render() {
         const { connectDragSource, isDragging, icon } = this.props;
         return connectDragSource(
-            <span style={{
-                opacity: isDragging ? 0.5 : 1,
-                cursor: 'move',
-                fontSize: 20,
-                fontWeight: 'bold'
-                }}
-            >
+            <span style={{ opacity: isDragging ? 0.5 : 1 }} className="piece" >
                 { icon }
             </span>
         );
@@ -42,6 +36,6 @@ Piece.propTypes = {
     id: PropTypes.string.isRequired,
     type: PropTypes.string.isRequired,
     icon: PropTypes.string.isRequired
-}
+};
 
 export default DragSource(getDragSourceType, pieceSource, collect)(Piece);

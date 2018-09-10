@@ -25,14 +25,14 @@ class Board extends React.Component {
             pieces = removedPieces.filter(piece => piece.colour === colour).map(piece => <span key={piece.id}>{piece.icon}</span>);
         }
 
-        return <div style={{ marginRight: 25, marginLeft: 25, display: 'flex', flexDirection: 'column', width: 50, maxHeight: 200, flexWrap: 'wrap' }}>{ pieces }</div>;
+        return <div className="board--removed-pieces">{ pieces }</div>;
     }
 
     renderSquare(col, row, icon, id, type, colour) {
         const keyId = `${col}_${row}`;
         const highlightSquare = this.props.inCheck && type === 'king' && this.props.currentPlayer === colour;
         return (
-            <div key={keyId} style={{ width: '25px', height: '25px' }} >
+            <div key={keyId} className="board--square" >
                 <BoardSquare col={col} row={row} icon={icon} id={id} type={type} highlightSquare={highlightSquare} />
             </div>
         );
@@ -53,7 +53,11 @@ class Board extends React.Component {
 
         message = `It is ${currentPlayer}'s turn`;
 
-        return <span style={{ marginTop: 25, color: 'darkblue', fontWeight: 'bold', fontSize: 24 }}>{ message }</span>;
+        return (
+            <div className="board--header">
+                <span className="board--game-status">{ message }</span>
+            </div>
+        );
     }
 
     renderPromotionOptions() {
@@ -70,8 +74,8 @@ class Board extends React.Component {
         });
 
         return (
-            <div style={{ marginTop: 25 }}>
-                <span style={{ color: 'darkblue', fontWeight: 'bold', fontSize: 24 }}>Select a piece to promote: </span>
+            <div className="board--header">
+                <span className="board--game-status">Select a piece to promote: </span>
                 { options }
             </div>
         );
@@ -94,7 +98,7 @@ class Board extends React.Component {
                 }
             }
             rows.push(
-                <div key={row} style={{ display: 'flex' }}>
+                <div key={row} className="board--grid-row" >
                     { squares }
                 </div>
             );
@@ -105,10 +109,10 @@ class Board extends React.Component {
 
     render() {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <h1 style={{ marginTop: 25 }}>Welcome to two-player chess</h1>
+            <div className="board" >
+                <h1 className="board--header">Welcome to two-player chess</h1>
                 { this.renderGameStatusMessage() }
-                <div style={{ display: 'flex', marginTop: 25 }}>
+                <div className="board--grid">
                     { this.renderRemovedPieces('white') }
                     { this.renderRows() }
                     { this.renderRemovedPieces('black') }

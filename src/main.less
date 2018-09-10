@@ -1,0 +1,67 @@
+.board {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .board--header {
+        margin-top: 25px;
+    }
+
+    .board--grid {
+        display: flex;
+        margin-top: 25px;
+
+        .board--grid-row {
+            display: flex;
+        }
+    }
+
+    .board--square {
+        width: 25px;
+        height: 25px;
+    }
+
+    .board--game-status {
+        color: darkblue;
+        font-weight: bold;
+        font-size: 24px;
+    }
+
+    .board--removed-pieces {
+        margin-right: 25px;
+        margin-left: 25px;
+        display: flex; 
+        flex-direction: column;
+        width: 50px;
+        max-height: 200px;
+        flex-wrap: wrap;
+    }
+}
+
+.board-square {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    .board-square--overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        z-index: 1;
+        opacity: 0.5;
+    }
+}
+
+.square {
+    width: 100%; 
+    height: 100%
+}
+
+.piece {
+    cursor: move;
+    font-size: 20px;
+    font-weight: bold;
+    opacity: 1;
+}

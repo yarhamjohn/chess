@@ -6,7 +6,7 @@ export default class Square extends React.Component {
         const { colour } = this.props;
 
         return (
-            <div style={{ backgroundColor: colour, width: '100%', height: '100%' }}>
+            <div style={{ backgroundColor: colour }} className="square" >
                 {this.props.children}
             </div>
         );
