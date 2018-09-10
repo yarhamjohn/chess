@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import BoardSquare from './board-square';
+import { Pieces } from '../shared/constants';
+import { promotePawn } from '../shared/game';
 
 class Board extends React.Component {
     getPieceData(col, row) {
@@ -45,6 +47,28 @@ class Board extends React.Component {
         return `It is ${this.props.currentPlayer}'s turn`;
     }
 
+    showPromotionOptions() {
+        const { promotion, currentPlayer } = this.props;
+
+        if (!promotion) {
+            return '';
+        }
+
+        const options = [];
+        Object.keys(Pieces).forEach((key) => {
+            const piece = Pieces[key];
+            const correctColour = piece.colour === currentPlayer;
+            const correctPiece = piece.type === 'queen' || piece.type === 'rook' || piece.type === 'bishop' || piece.type === 'knight';
+            if (correctColour && correctPiece) {
+                options.push(<button key={piece.type} onClick={() => promotePawn(piece)}>{piece.icon}</button>);
+            }
+        });
+
+        return (
+            <div>{ options }</div>
+        );
+    }
+
     render() {
         const rows = [];
         for (let row = 0; row < 8; row += 1) {
@@ -81,6 +105,7 @@ class Board extends React.Component {
                         <p>Black: { removedBlackPieces }</p>
                     </div>
                 }
+                { this.showPromotionOptions() }
             </div>
         );
     }
@@ -118,7 +143,8 @@ Board.propTypes = {
     ).isRequired,
     inCheck: PropTypes.bool.isRequired,
     gameWon: PropTypes.bool.isRequired,
-    stalemate: PropTypes.bool.isRequired
+    stalemate: PropTypes.bool.isRequired,
+    promotion: PropTypes.bool.isRequired
 };
 
 export default DragDropContext(HTML5Backend)(Board);

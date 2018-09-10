@@ -8,6 +8,7 @@ let observer = null;
 let kingIsInCheck = false;
 let winner = false;
 let stalemate = false;
+let promotion = false;
 
 function reset() {
     observer = null;
@@ -16,7 +17,7 @@ function reset() {
 }
 
 function emitChange() {
-    observer(playingPieces, currentPlayer, removedPieces, kingIsInCheck, winner, stalemate);
+    observer(playingPieces, currentPlayer, removedPieces, kingIsInCheck, winner, stalemate, promotion);
 }
 
 function populatePlayingPieces() {
@@ -105,16 +106,31 @@ function getPieceFromPosition(currentPieces, piecePosition) {
     );
 }
 
-function promotePawn(currentPieces, takenPieces, newPosition, pawn) {
-    const queens = currentPieces.concat(takenPieces).filter(piece => piece.type === 'queen' && piece.colour === pawn.colour);
-    const splitQueenId = queens[0].id.split('_');
-    const newQueen = cloneDeep(queens)[0];
-    newQueen.id = splitQueenId[0].concat('_', splitQueenId[1], '_', queens.length);
-    newQueen.position = newPosition;
+function promotePawn(promotionPiece) {
+    let currentPieces = cloneDeep(playingPieces);
+    let takenPieces = cloneDeep(removedPieces);
+
+    let pawn = currentPieces.filter(piece => piece.type === 'pawn' && (piece.position[1] === 0 || piece.position[1] === 7));
+    if (pawn.length === 0) {
+        return;
+    }
+    pawn = pawn[0];
+
+    const pieces = currentPieces.concat(takenPieces).filter(piece => piece.type === promotionPiece.type && piece.colour === promotionPiece.colour);
+    const splitPieceId = pieces[0].id.split('_');
+    const newQueen = cloneDeep(pieces)[0];
+    newQueen.id = splitPieceId[0].concat('_', splitPieceId[1], '_', pieces.length);
+    newQueen.position = pawn.position;
     newQueen.hasMoved = true;
 
     const updatedCurrentPieces = addPieceToBoard(currentPieces, newQueen);
-    return removePieceFromBoard(updatedCurrentPieces, takenPieces, pawn);
+    [currentPieces, takenPieces] = removePieceFromBoard(updatedCurrentPieces, takenPieces, pawn);
+
+    playingPieces = currentPieces;
+    removedPieces = takenPieces;
+
+    updateGameState(currentPieces);
+    emitChange();
 }
 
 function performCastle(currentPieces, pieceToMove, newPosition) {
@@ -213,12 +229,6 @@ function performMove(newPosition, pieceToMove) {
     }
 
     currentPieces = updatePiecePosition(currentPieces, newPosition, pieceToMove);
-
-    const endRow = newPosition[1] === 0 || newPosition[1] === 7;
-    const pawnReachedEnd = pieceToMove.type === 'pawn' && endRow;
-    if (pawnReachedEnd) {
-        [currentPieces, takenPieces] = promotePawn(currentPieces, takenPieces, newPosition, pieceToMove);
-    }
 
     return [currentPieces, takenPieces];
 }
@@ -557,7 +567,7 @@ function isValidMove(newPosition, piece) {
 function canMovePiece(newPosition, pieceId) {
     const piece = getPieceFromId(playingPieces, pieceId);
     if (piece && piece.colour === currentPlayer) {
-        return isValidMove(newPosition, piece);
+        return isValidMove(newPosition, piece) && !promotion;
     }
 
     return false;
@@ -593,13 +603,8 @@ function winIsImpossible(currentPieces) {
     return onlyKingsLeft || onlyOneBishop || onlyOneKnight;
 }
 
-function movePiece(newPosition, pieceId) {
-    const pieceToMove = getPieceFromId(playingPieces, pieceId);
-    const [currentPieces, takenPieces] = performMove(newPosition, pieceToMove);
-
-    playingPieces = currentPieces;
-    removedPieces = takenPieces;
-
+function updateGameState(currentPieces) {
+    promotion = false;
     changePlayer();
     const king = getKing(currentPieces, currentPlayer);
     kingIsInCheck = inCheck(currentPieces, king.position, king.colour);
@@ -610,11 +615,25 @@ function movePiece(newPosition, pieceId) {
 
     const gameCannotBeWon = winIsImpossible(currentPieces);
     stalemate = noValidMoves || gameCannotBeWon;
+}
 
-    // what about unlikely wins?
-    // options on promotion
+function movePiece(newPosition, pieceId) {
+    const pieceToMove = getPieceFromId(playingPieces, pieceId);
+    const [currentPieces, takenPieces] = performMove(newPosition, pieceToMove);
 
+    playingPieces = currentPieces;
+    removedPieces = takenPieces;
+
+    const endRow = newPosition[1] === 0 || newPosition[1] === 7;
+    const pawnReachedEnd = pieceToMove.type === 'pawn' && endRow;
+    if (pawnReachedEnd) {
+        promotion = true;
+        emitChange();
+        return;
+    }
+
+    updateGameState(currentPieces);
     emitChange();
 }
 
-export { observe, movePiece, canMovePiece };
+export { observe, movePiece, canMovePiece, promotePawn };
