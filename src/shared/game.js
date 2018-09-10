@@ -471,6 +471,28 @@ function getInitialPositionsToCheck(kingPosition) {
 function inCheck(currentPieces, targetPosition, targetColour) {
     const [possibleMoves, positionsToCheck] = getInitialPositionsToCheck(targetPosition);
 
+    const [targetCol, targetRow] = targetPosition;
+    const knightPositions = [
+        [targetCol - 2, targetRow - 1],
+        [targetCol - 1, targetRow - 2],
+        [targetCol + 2, targetRow - 1],
+        [targetCol + 1, targetRow - 2],
+        [targetCol - 2, targetRow + 1],
+        [targetCol - 1, targetRow + 2],
+        [targetCol + 2, targetRow + 1],
+        [targetCol + 1, targetRow + 2],
+    ];
+    for (let i = 0; i < knightPositions.length; i += 1) {
+        const [col, row] = knightPositions[i];
+        const isOnBoard = col > 0 && row > 0 && col < 8 && row < 8;
+        if (isOnBoard) {
+            const piece = getPieceFromPosition(currentPieces, knightPositions[i]);
+            if (piece !== undefined && piece.type === 'knight' && piece.colour !== targetColour) {
+                return true;
+            }
+        }
+    }
+
     let numPositions = positionsToCheck.length;
     while (numPositions > 0) {
         for (let i = numPositions - 1; i >= 0; i -= 1) {
