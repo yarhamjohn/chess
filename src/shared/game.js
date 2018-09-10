@@ -162,7 +162,7 @@ function changePlayer() {
 }
 
 function isEnPassantMove(currentPieces, newPosition, attackingPawn) {
-    const vulnerablePawns = currentPieces.filter(piece => piece.vulnerableToEnPassant)
+    const vulnerablePawns = currentPieces.filter(piece => piece.vulnerableToEnPassant);
     if (vulnerablePawns.length === 0) {
         return false;
     }
@@ -172,7 +172,7 @@ function isEnPassantMove(currentPieces, newPosition, attackingPawn) {
     const sameColumn = newPosition[0] === vulnerablePawn.position[0];
     const correctRow = attackingPawn.colour === 'white' ? newPosition[1] === vulnerablePawn.position[1] - 1 : newPosition[1] === vulnerablePawn.position[1] + 1;
     const targetsVulnerablePawn = sameColumn && correctRow;
-    return canEnPassant || targetsVulnerablePawn;
+    return canEnPassant && targetsVulnerablePawn;
 }
 
 function getEnPassantPawns(currentPieces, newPosition, pawnColour) {
