@@ -2,7 +2,7 @@
 This is a two-player chess game built in Electron using React. See https://en.wikipedia.org/wiki/Chess for the rules of chess.
 
 ## Version 1.0
-This is the initial build of the application.
+This is the initial build of the application (https://github.com/yarhamjohn/chess/releases/tag/v1.0.0).
 - Game is two-player
 - Players alternate turns starting with White.
 - Pieces are moved by drag-and-drop with taken pieces shown next to the board.
