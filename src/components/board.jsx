@@ -18,13 +18,14 @@ class Board extends React.Component {
         return null;
     }
 
-    getRemovedPieces(colour) {
-        if (this.props.removedPieces.length > 0) {
-            const pieces = this.props.removedPieces.filter(piece => piece.colour === colour);
-            return pieces.map(piece => piece.icon).join(' ');
+    renderRemovedPieces(colour) {
+        const { removedPieces } = this.props;
+        let pieces = [];
+        if (removedPieces.length > 0) {
+            pieces = removedPieces.filter(piece => piece.colour === colour).map(piece => <span key={piece.id}>{piece.icon}</span>);
         }
 
-        return null;
+        return <div style={{ marginRight: 25, marginLeft: 25, display: 'flex', flexDirection: 'column', width: 50, maxHeight: 200, flexWrap: 'wrap' }}>{ pieces }</div>;
     }
 
     renderSquare(col, row, icon, id, type, colour) {
@@ -37,22 +38,26 @@ class Board extends React.Component {
         );
     }
 
-    gameStatusMessage() {
-        if (this.props.gameWon) {
-            return `${this.props.currentPlayer} has lost!`;
-        } else if (this.props.stalemate) {
-            return 'The game is a draw.';
+    renderGameStatusMessage() {
+        const { promotion, stalemate, gameWon, currentPlayer } = this.props;
+        if (promotion) {
+            return this.renderPromotionOptions();
         }
 
-        return `It is ${this.props.currentPlayer}'s turn`;
+        let message = '';
+        if (gameWon) {
+            message = `${currentPlayer} has lost!`;
+        } else if (stalemate) {
+            message = 'The game is a draw.';
+        }
+
+        message = `It is ${currentPlayer}'s turn`;
+
+        return <span style={{ marginTop: 25, color: 'darkblue', fontWeight: 'bold', fontSize: 24 }}>{ message }</span>;
     }
 
-    showPromotionOptions() {
-        const { promotion, currentPlayer } = this.props;
-
-        if (!promotion) {
-            return '';
-        }
+    renderPromotionOptions() {
+        const { currentPlayer } = this.props;
 
         const options = [];
         Object.keys(Pieces).forEach((key) => {
@@ -65,11 +70,14 @@ class Board extends React.Component {
         });
 
         return (
-            <div>{ options }</div>
+            <div style={{ marginTop: 25 }}>
+                <span style={{ color: 'darkblue', fontWeight: 'bold', fontSize: 24 }}>Select a piece to promote: </span>
+                { options }
+            </div>
         );
     }
 
-    render() {
+    renderRows() {
         const rows = [];
         for (let row = 0; row < 8; row += 1) {
             const squares = [];
@@ -92,20 +100,19 @@ class Board extends React.Component {
             );
         }
 
-        const removedWhitePieces = this.getRemovedPieces('white');
-        const removedBlackPieces = this.getRemovedPieces('black');
+        return <div>{ rows }</div>;
+    }
+
+    render() {
         return (
-            <div>
-                { this.gameStatusMessage() }
-                { rows }
-                { this.props.removedPieces.length > 0 &&
-                    <div>
-                        <h1>Removed pieces:</h1>
-                        <p>White: { removedWhitePieces }</p>
-                        <p>Black: { removedBlackPieces }</p>
-                    </div>
-                }
-                { this.showPromotionOptions() }
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <h1 style={{ marginTop: 25 }}>Welcome to two-player chess</h1>
+                { this.renderGameStatusMessage() }
+                <div style={{ display: 'flex', marginTop: 25 }}>
+                    { this.renderRemovedPieces('white') }
+                    { this.renderRows() }
+                    { this.renderRemovedPieces('black') }
+                </div>
             </div>
         );
     }
