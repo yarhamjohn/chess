@@ -10,10 +10,20 @@ let winner = false;
 let stalemate = false;
 let promotion = false;
 
+function newGame() {
+    reset();
+    populatePlayingPieces();
+    emitChange();
+}
+
 function reset() {
-    observer = null;
     playingPieces = [];
     removedPieces = [];
+    kingIsInCheck = false;
+    winner = false;
+    stalemate = false;
+    promotion = false;
+    currentPlayer = 'white';
 }
 
 function emitChange() {
@@ -44,6 +54,7 @@ function populatePlayingPieces() {
 
 function observe(o) {
     if (observer) {
+        observer = null;
         reset();
     }
     observer = o;
@@ -658,4 +669,4 @@ function movePiece(newPosition, pieceId) {
     emitChange();
 }
 
-export { observe, movePiece, canMovePiece, promotePawn };
+export { observe, movePiece, canMovePiece, promotePawn, newGame };

@@ -4,7 +4,7 @@ import { DragDropContext } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import BoardSquare from './board-square';
 import { Pieces } from '../shared/constants';
-import { promotePawn } from '../shared/game';
+import { newGame, promotePawn } from '../shared/game';
 
 class Board extends React.Component {
     getPieceData(col, row) {
@@ -116,6 +116,9 @@ class Board extends React.Component {
                     { this.renderRemovedPieces('white') }
                     { this.renderRows() }
                     { this.renderRemovedPieces('black') }
+                </div>
+                <div>
+                    <button onClick={() => newGame()} className="new-game-button">New Game</button>
                 </div>
             </div>
         );
