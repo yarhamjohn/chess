@@ -33,7 +33,7 @@ class Board extends React.Component {
         const highlightSquare = this.props.inCheck && type === 'king' && this.props.currentPlayer === colour;
         return (
             <div key={keyId} className="board--square" >
-                <BoardSquare col={col} row={row} icon={icon} id={id} type={type} highlightSquare={highlightSquare} />
+                <BoardSquare col={col} row={row} icon={icon} id={id} type={type} colour={colour} highlightSquare={highlightSquare} currentPlayer={this.props.currentPlayer} />
             </div>
         );
     }

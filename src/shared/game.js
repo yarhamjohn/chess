@@ -45,7 +45,8 @@ function populatePlayingPieces() {
                     position: piece.startingPositions[i],
                     hasMoved: false,
                     vulnerableToEnPassant: false,
-                    canEnPassant: false
+                    canEnPassant: false,
+                    canCastle: false
                 }
             );
         }
@@ -67,6 +68,17 @@ function updateCanEnPassant(pieces, pieceToMove, canEnPassant) {
     Object.keys(currentPieces).forEach((key) => {
         if (currentPieces[key].id === pieceToMove.id) {
             currentPieces[key].canEnPassant = canEnPassant;
+        }
+    });
+
+    return currentPieces;
+}
+
+function updateCanCastle(pieces, kingColour, canCastle) {
+    const currentPieces = pieces;
+    Object.keys(currentPieces).forEach((key) => {
+        if (currentPieces[key].colour === kingColour && currentPieces[key].type === 'king') {
+            currentPieces[key].canCastle = canCastle;
         }
     });
 
@@ -314,16 +326,16 @@ function castleHasMoved(currentPieces, castleRow, castleColumn) {
     return true;
 }
 
-function isValidCastle(currentPieces, rowChange, colChange, playingPiece) {
-    const [col, row] = playingPiece.position;
+function isValidCastle(currentPieces, rowChange, colChange, king) {
+    const [col, row] = king.position;
     const castleColumn = colChange > 0 ? 7 : 0;
-    if (playingPiece.hasMoved || castleHasMoved(currentPieces, row, castleColumn)) {
+    if (king.hasMoved || castleHasMoved(currentPieces, row, castleColumn)) {
         return false;
     }
 
     const columnsToCastle = castleColumn - col;
-    const targetPosition = [playingPiece.position[0] + colChange, row];
-    return noStraightObstruction(currentPieces, targetPosition, playingPiece, rowChange, columnsToCastle);
+    const targetPosition = [king.position[0] + colChange, row];
+    return noStraightObstruction(currentPieces, targetPosition, king, rowChange, columnsToCastle);
 }
 
 function validKingMove(currentPieces, rowChange, colChange, playingPiece) {
@@ -650,9 +662,18 @@ function updateGameState(currentPieces) {
     stalemate = noValidMoves || gameCannotBeWon;
 }
 
+function canCastle(currentPieces, colour) {
+    const king = getKing(currentPieces, colour);
+    const leftCastle = isValidCastle(currentPieces, 0, -2, king);
+    const rightCastle = isValidCastle(currentPieces, 0, 2, king);
+    return leftCastle || rightCastle;
+}
+
 function movePiece(newPosition, pieceId) {
     const pieceToMove = getPieceFromId(playingPieces, pieceId);
-    const [currentPieces, takenPieces] = performMove(newPosition, pieceToMove);
+    let [currentPieces, takenPieces] = performMove(newPosition, pieceToMove);
+    currentPieces = updateCanCastle(currentPieces, 'black', canCastle(currentPieces, 'black'));
+    currentPieces = updateCanCastle(currentPieces, 'white', canCastle(currentPieces, 'white'));
 
     playingPieces = currentPieces;
     removedPieces = takenPieces;
@@ -669,4 +690,8 @@ function movePiece(newPosition, pieceId) {
     emitChange();
 }
 
-export { observe, movePiece, canMovePiece, promotePawn, newGame };
+function getPiece(pieceId) {
+    return playingPieces.find(piece => piece.id === pieceId);
+}
+
+export { observe, movePiece, canMovePiece, promotePawn, newGame, getPiece };
