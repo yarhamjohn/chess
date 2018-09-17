@@ -5,7 +5,7 @@ import flow from 'lodash.flow';
 import Square from './square';
 import Piece from './piece';
 import { canMovePiece, movePiece, getPiece } from '../shared/game';
-import { PieceTypes } from '../shared/constants';
+import { PieceTypes, Pieces } from '../shared/constants';
 
 const squareDropTarget = {
     drop(props, monitor) {
@@ -54,6 +54,16 @@ class BoardSquare extends React.Component {
             <div style={{ backgroundColor: color }} className="board-square--overlay" />
         );
     }
+    
+    renderCastleOverlay(tempIcon) {
+        return (
+            <div className="board-square--overlay-castle">
+                <span className="piece">
+                    { tempIcon }
+                </span>
+            </div>
+        );
+    }
 
     kingIsAttemptingToCastle() {
         const { distanceMoved, kingSquarePosition, cursorStartPosition } = this.props;
@@ -66,7 +76,9 @@ class BoardSquare extends React.Component {
     }
 
     render() {
-        const { connectDropTarget, isOver, canDrop, icon, id, type, isDragging, draggingItem, row, col, distanceMoved, currentPlayer } = this.props;
+        const { connectDropTarget, isOver, canDrop, icon, id, type, isDragging, draggingItem, row, col, distanceMoved, currentPlayer, cursorStartPosition, kingSquarePosition } = this.props;
+
+        let castleIcon = null;
         if (isDragging && !isOver) {
             const draggingPiece = getPiece(draggingItem.id);
 
@@ -77,17 +89,12 @@ class BoardSquare extends React.Component {
                 const kingAttemptingCastle = this.kingIsAttemptingToCastle();
                 const kingCastlingLeft = draggingPiece.position[0] - col > 0 && distanceMoved.x < 0;
                 const kingCastlingRight = draggingPiece.position[0] - col < 0 && distanceMoved.x > 0;
-
-                if (kingAttemptingCastle && (kingCastlingLeft || kingCastlingRight)) {
-                return connectDropTarget(
-                    <div className="board-square" >
-                        <Square colour={this.getSquareColour()}>
-                            { icon && id && type && <Piece icon={icon} id={id} type={type} />}
-                        </Square>
         
-                        { this.renderOverlay('orange') }
-                    </div>
-                );
+                const cursorDistanceIntoSquare = Math.ceil(cursorStartPosition.y - kingSquarePosition.y);
+                const draggingInSameRow = (distanceMoved.y < (25 - cursorDistanceIntoSquare)) && (distanceMoved.y > (-25 + cursorDistanceIntoSquare));
+
+                if (draggingInSameRow && kingAttemptingCastle && (kingCastlingLeft || kingCastlingRight)) {
+                    castleIcon = draggingPiece.colour === 'white' ? Pieces.WHITE_ROOK.icon : Pieces.BLACK_ROOK.icon;
                 }
             }
         }
@@ -95,11 +102,11 @@ class BoardSquare extends React.Component {
         return connectDropTarget(
             <div className="board-square" >
                 <Square colour={this.getSquareColour()}>
-                    { icon && id && type && <Piece icon={icon} id={id} type={type} />}
+                    { icon && id && type && <Piece icon={icon} id={id} type={type} /> }
                 </Square>
 
                 { isOver && !canDrop && this.renderOverlay('red') }
-                { !isOver && canDrop && this.renderOverlay('yellow') }
+                { castleIcon === null ? (!isOver && canDrop && this.renderOverlay('yellow')) : !isOver && canDrop && this.renderCastleOverlay(tempIcon) }
                 { isOver && canDrop && this.renderOverlay('limegreen') }
             </div>
         );
