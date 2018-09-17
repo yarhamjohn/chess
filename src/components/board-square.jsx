@@ -79,13 +79,12 @@ class BoardSquare extends React.Component {
         const { connectDropTarget, isOver, canDrop, icon, id, type, isDragging, draggingItem, row, col, distanceMoved, currentPlayer, cursorStartPosition, kingSquarePosition } = this.props;
 
         let castleIcon = null;
+        let hideCastle = false;
         if (isDragging && !isOver) {
             const draggingPiece = getPiece(draggingItem.id);
-
             const kingInSameRow = draggingPiece.position[1] === row;
-            const kingInAdjacentColumn = Math.abs(draggingPiece.position[0] - col) === 1;
 
-            if (draggingPiece.type === 'king' && draggingPiece.canCastle && kingInSameRow && kingInAdjacentColumn && draggingPiece.colour === currentPlayer) {
+            if (draggingPiece.type === 'king' && draggingPiece.canCastle && kingInSameRow && draggingPiece.colour === currentPlayer) {
                 const kingAttemptingCastle = this.kingIsAttemptingToCastle();
                 const kingCastlingLeft = draggingPiece.position[0] - col > 0 && distanceMoved.x < 0;
                 const kingCastlingRight = draggingPiece.position[0] - col < 0 && distanceMoved.x > 0;
@@ -94,7 +93,14 @@ class BoardSquare extends React.Component {
                 const draggingInSameRow = (distanceMoved.y < (25 - cursorDistanceIntoSquare)) && (distanceMoved.y > (-25 + cursorDistanceIntoSquare));
 
                 if (draggingInSameRow && kingAttemptingCastle && (kingCastlingLeft || kingCastlingRight)) {
-                    castleIcon = draggingPiece.colour === 'white' ? Pieces.WHITE_ROOK.icon : Pieces.BLACK_ROOK.icon;
+                    const kingInAdjacentColumn = Math.abs(draggingPiece.position[0] - col) === 1;
+                    const isCornerSquare = (row === 0 && col === 0) || (row === 0 && col === 7) || (row === 7 && col === 0) || (row === 7 && col === 7);
+
+                    if (kingInAdjacentColumn) {
+                        castleIcon = draggingPiece.colour === 'white' ? Pieces.WHITE_ROOK.icon : Pieces.BLACK_ROOK.icon;
+                    } else if (isCornerSquare) {
+                        hideCastle = true;
+                    }
                 }
             }
         }
@@ -102,11 +108,11 @@ class BoardSquare extends React.Component {
         return connectDropTarget(
             <div className="board-square" >
                 <Square colour={this.getSquareColour()}>
-                    { icon && id && type && <Piece icon={icon} id={id} type={type} /> }
+                    { hideCastle ? '' : icon && id && type && <Piece icon={icon} id={id} type={type} /> }
                 </Square>
 
                 { isOver && !canDrop && this.renderOverlay('red') }
-                { castleIcon === null ? (!isOver && canDrop && this.renderOverlay('yellow')) : !isOver && canDrop && this.renderCastleOverlay(tempIcon) }
+                { castleIcon === null ? (!isOver && canDrop && this.renderOverlay('yellow')) : !isOver && canDrop && this.renderCastleOverlay(castleIcon) }
                 { isOver && canDrop && this.renderOverlay('limegreen') }
             </div>
         );
