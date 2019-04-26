@@ -1,7 +1,7 @@
 {
   "name": "chess",
   "productName": "chess",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Two player chess game",
   "main": "src/index.js",
   "scripts": {
