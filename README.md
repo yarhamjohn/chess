@@ -1,7 +1,7 @@
 # Chess
 This is a two-player chess game built in Electron using React. See https://en.wikipedia.org/wiki/Chess for the rules of chess.
 
-## Version 1.0
+## Version 1.0.0
 This is the initial build of the application (https://github.com/yarhamjohn/chess/releases/tag/v1.0.0).
 - Game is two-player
 - Players alternate turns starting with White.
@@ -10,3 +10,6 @@ This is the initial build of the application (https://github.com/yarhamjohn/ches
 - Legal moves for the selected piece are shown in yellow, and illegal moves in red.
 - When a player is in check, the king is highlighted in red and only moves that escape check are permitted.
 - The game can be restarted at any point.
+
+## Version 1.0.1
+Minor patch that improves the way the drag and drop interface works when attempting a castling manouver.
